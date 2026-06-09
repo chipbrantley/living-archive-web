@@ -74,19 +74,34 @@ const pageTitle = image
 
       {image && (
         <div class="card">
-          <div class="hero-placeholder">
-            <strong>Image #{image.imageNumber}</strong>
-            Image file rendering comes next — for now this confirms the data layer.
-          </div>
+          {image.imageFile ? (
+            <figure class="hero-image-wrap">
+              <img
+                src={image.imageFile.url}
+                alt={image.caption ?? `Matt Herron #${image.imageNumber}`}
+                width={image.imageFile.width}
+                height={image.imageFile.height}
+                loading="eager"
+              />
+            </figure>
+          ) : (
+            <div class="hero-placeholder">
+              <strong>Image #{image.imageNumber}</strong>
+              Image file not yet uploaded — drop a JPG into the "Image file" attachment field on this Image record in Airtable.
+            </div>
+          )}
 
-          <h1 class="title">Image #{image.imageNumber}</h1>
+          {image.caption ? (
+            <p class="caption">{image.caption}</p>
+          ) : (
+            <h1 class="title">Image #{image.imageNumber}</h1>
+          )}
 
           <div class="subtitle">
             {image.photographerName && (
               <span class="photog-pill">{image.photographerName === 'MH' ? 'Matt Herron' : image.photographerName}</span>
             )}
             <span class="id-mono">Archive ID: {image.imageNumber}</span>
-            <span class="id-mono">Airtable: {image.id}</span>
           </div>
 
           {prints.length === 0 && (
@@ -113,14 +128,15 @@ const pageTitle = image
             </div>
           )}
 
-          <div class="section" style="margin-top:32px">
-            <div class="notice">
-              <strong>What's next:</strong> caption (from Take Stock ingest), identified people,
-              event &amp; location, Roll context, and the actual image file. This page is the
-              proof-of-pipeline — everything from here forward is a matter of plugging in fields
-              we already have in the schema.
+          {!image.caption && (
+            <div class="section" style="margin-top:32px">
+              <div class="notice">
+                <strong>What's next:</strong> caption (from Take Stock ingest), identified people,
+                event &amp; location, Roll context. Everything from here forward is a matter of
+                plugging in fields we already have in the schema.
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

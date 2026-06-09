@@ -37,11 +37,20 @@ async function airtable(path: string, params?: Record<string, string>): Promise<
   return res.json();
 }
 
+export interface AirtableImageFile {
+  url: string;
+  width?: number;
+  height?: number;
+  filename?: string;
+}
+
 export interface AirtableImage {
   id: string;
   imageNumber: string;
   photographerName: string | null;
   printIds: string[];
+  caption: string | null;
+  imageFile: AirtableImageFile | null;
 }
 
 export interface AirtablePrint {
@@ -65,11 +74,27 @@ export async function fetchImageByNumber(imageNumber: string): Promise<AirtableI
   });
   if (!data.records?.length) return null;
   const r = data.records[0];
+
+  // Airtable attachment fields return an array of objects with url, width, height, etc.
+  // We take the first attachment as the canonical file.
+  const attachments = (r.fields['Image file'] ?? []) as any[];
+  const firstAttachment = attachments[0];
+  const imageFile: AirtableImageFile | null = firstAttachment
+    ? {
+        url: firstAttachment.url,
+        width: firstAttachment.width,
+        height: firstAttachment.height,
+        filename: firstAttachment.filename,
+      }
+    : null;
+
   return {
     id: r.id,
     imageNumber: r.fields['Image number'] ?? imageNumber,
     photographerName: (r.fields['Photographer prefix'] ?? [])[0] ?? null,
     printIds: r.fields['Prints'] ?? [],
+    caption: r.fields['Caption'] ?? null,
+    imageFile,
   };
 }
 

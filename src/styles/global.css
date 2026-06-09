@@ -101,6 +101,32 @@ a:hover { text-decoration: underline; }
   color: rgba(255, 255, 255, 0.9);
 }
 
+.hero-image-wrap {
+  margin: 0 0 22px 0;
+  background: #1a1916;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-image-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 72vh;
+  object-fit: contain;
+}
+
+.caption {
+  font-family: "Times New Roman", "Times", serif;
+  font-size: 19px;
+  color: var(--ink);
+  line-height: 1.55;
+  margin-bottom: 14px;
+  max-width: 800px;
+}
+
 .title {
   font-family: "Times New Roman", "Times", serif;
   font-size: 28px;
