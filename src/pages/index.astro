@@ -1,0 +1,53 @@
+---
+import '../styles/global.css';
+import { pingAirtable } from '../lib/airtable';
+
+const error = await pingAirtable();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>The Living Archive</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">The Living Archive</span>
+          <span class="brand-sub">A Proximity Partners project</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="page">
+      <div class="card">
+        <h1 class="title">Hello.</h1>
+        <p style="font-size:15px;color:var(--ink-soft);margin-bottom:18px">
+          This is the very first page of the Living Archive, pulling live from your Airtable base.
+        </p>
+        {error ? (
+          <div class="error-card">
+            <strong>Couldn't reach Airtable.</strong>
+            <p>Check that <code>AIRTABLE_PAT</code> is set correctly in <code>.env.local</code>.</p>
+            <pre>{error}</pre>
+          </div>
+        ) : (
+          <div class="notice">
+            <strong>Connected.</strong> Try a real image:
+            <ul style="margin-top:8px;padding-left:22px">
+              <li><a href="/image/1675427">/image/1675427</a> — Selma March, Day 1 (leaders with leis)</li>
+              <li><a href="/image/1673928">/image/1673928</a> — Ralph Bunche at the Montgomery capitol</li>
+              <li><a href="/image/1673325">/image/1673325</a> — March dignitaries enter Montgomery</li>
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">The Living Archive</div>
+    </footer>
+  </body>
+</html>

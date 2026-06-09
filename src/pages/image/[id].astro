@@ -1,0 +1,132 @@
+---
+import '../../styles/global.css';
+import { fetchImageByNumber, fetchPrintsByIds } from '../../lib/airtable';
+import type { AirtableImage, AirtablePrint } from '../../lib/airtable';
+
+const { id } = Astro.params;
+const imageId = id ?? '';
+
+let image: AirtableImage | null = null;
+let prints: AirtablePrint[] = [];
+let error: string | null = null;
+
+if (!imageId) {
+  error = 'No image number provided.';
+} else {
+  try {
+    image = await fetchImageByNumber(imageId);
+    if (image && image.printIds.length > 0) {
+      prints = await fetchPrintsByIds(image.printIds);
+      // Sort by PP # for stable display.
+      prints.sort((a, b) => a.ppNumber.localeCompare(b.ppNumber));
+    }
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Unknown error.';
+  }
+}
+
+const pageTitle = image
+  ? `Image ${image.imageNumber} — The Living Archive`
+  : `Image not found — The Living Archive`;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">The Living Archive</span>
+          <span class="brand-sub">A Proximity Partners project</span>
+        </a>
+      </div>
+    </header>
+
+    <nav class="breadcrumb">
+      <a href="/">Browse</a>
+      <span class="sep">›</span>
+      <span>Image {imageId}</span>
+    </nav>
+
+    <div class="page">
+      {error && (
+        <div class="card">
+          <div class="error-card">
+            <strong>Something went wrong.</strong>
+            <pre>{error}</pre>
+          </div>
+        </div>
+      )}
+
+      {!error && !image && (
+        <div class="card">
+          <h1 class="title">Image not found</h1>
+          <p>
+            We couldn't find image <strong>{imageId}</strong> in the archive.
+            <a href="/">Back to start</a>
+          </p>
+        </div>
+      )}
+
+      {image && (
+        <div class="card">
+          <div class="hero-placeholder">
+            <strong>Image #{image.imageNumber}</strong>
+            Image file rendering comes next — for now this confirms the data layer.
+          </div>
+
+          <h1 class="title">Image #{image.imageNumber}</h1>
+
+          <div class="subtitle">
+            {image.photographerName && (
+              <span class="photog-pill">{image.photographerName === 'MH' ? 'Matt Herron' : image.photographerName}</span>
+            )}
+            <span class="id-mono">Archive ID: {image.imageNumber}</span>
+            <span class="id-mono">Airtable: {image.id}</span>
+          </div>
+
+          {prints.length === 0 && (
+            <div class="notice">
+              No prints in the inventory for this image yet.
+            </div>
+          )}
+
+          {prints.length > 0 && (
+            <div class="section">
+              <div class="section-title">Prints in inventory · {prints.length}</div>
+              <div class="print-list">
+                {prints.map((p) => (
+                  <div class="print-row">
+                    <span class="print-id">{p.ppNumber}</span>
+                    {p.size && <span class="print-size">{p.size}</span>}
+                    {p.mounting && <span class="print-mounting">{p.mounting}</span>}
+                    {p.authentication && p.authentication !== 'n/a' && (
+                      <span class="print-auth">{p.authentication}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div class="section" style="margin-top:32px">
+            <div class="notice">
+              <strong>What's next:</strong> caption (from Take Stock ingest), identified people,
+              event &amp; location, Roll context, and the actual image file. This page is the
+              proof-of-pipeline — everything from here forward is a matter of plugging in fields
+              we already have in the schema.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">The Living Archive</div>
+    </footer>
+  </body>
+</html>
