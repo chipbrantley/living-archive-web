@@ -131,3 +131,37 @@ export async function pingAirtable(): Promise<string | null> {
     return e instanceof Error ? e.message : String(e);
   }
 }
+
+/**
+ * Fetch all Image records that have an Image file attached.
+ * Sorted by Image number ascending.
+ */
+export async function fetchImagesWithFiles(): Promise<AirtableImage[]> {
+  const params: Record<string, string> = {
+    filterByFormula: `NOT({Image file} = BLANK())`,
+    pageSize: '100',
+    'sort[0][field]': 'Image number',
+    'sort[0][direction]': 'asc',
+  };
+  const data = await airtable('/Images', params);
+  return (data.records ?? []).map((r: any) => {
+    const attachments = (r.fields['Image file'] ?? []) as any[];
+    const firstAttachment = attachments[0];
+    const imageFile: AirtableImageFile | null = firstAttachment
+      ? {
+          url: firstAttachment.url,
+          width: firstAttachment.width,
+          height: firstAttachment.height,
+          filename: firstAttachment.filename,
+        }
+      : null;
+    return {
+      id: r.id,
+      imageNumber: r.fields['Image number'] ?? '',
+      photographerName: (r.fields['Photographer prefix'] ?? [])[0] ?? null,
+      printIds: r.fields['Prints'] ?? [],
+      caption: r.fields['Caption'] ?? null,
+      imageFile,
+    } as AirtableImage;
+  });
+}

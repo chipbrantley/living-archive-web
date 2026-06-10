@@ -1,8 +1,9 @@
 ---
 import '../styles/global.css';
-import { pingAirtable } from '../lib/airtable';
+import { fetchImagesWithFiles, pingAirtable } from '../lib/airtable';
 
 const error = await pingAirtable();
+const images = error ? [] : await fetchImagesWithFiles();
 ---
 
 <html lang="en">
@@ -22,28 +23,67 @@ const error = await pingAirtable();
     </header>
 
     <div class="page">
-      <div class="card">
-        <h1 class="title">Hello.</h1>
-        <p style="font-size:15px;color:var(--ink-soft);margin-bottom:18px">
-          This is the very first page of the Living Archive, pulling live from your Airtable base.
-        </p>
-        {error ? (
+      {error && (
+        <div class="card">
           <div class="error-card">
             <strong>Couldn't reach Airtable.</strong>
-            <p>Check that <code>AIRTABLE_PAT</code> is set correctly in <code>.env.local</code>.</p>
             <pre>{error}</pre>
           </div>
-        ) : (
-          <div class="notice">
-            <strong>Connected.</strong> Try a real image:
-            <ul style="margin-top:8px;padding-left:22px">
-              <li><a href="/image/1675427">/image/1675427</a> — Selma March, Day 1 (leaders with leis)</li>
-              <li><a href="/image/1673928">/image/1673928</a> — Ralph Bunche at the Montgomery capitol</li>
-              <li><a href="/image/1673325">/image/1673325</a> — March dignitaries enter Montgomery</li>
-            </ul>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {!error && (
+        <>
+          <section class="intro">
+            <h1 class="intro-title">An archive that returns.</h1>
+            <p class="intro-text">
+              The Living Archive is a working space for civil-rights photography &mdash; identifying
+              the people in the frame, gathering their stories, and returning the photographs to
+              the families and communities they came from. It begins with the photographs of
+              Matt Herron, with more photographers and collections to come.
+            </p>
+          </section>
+
+          {images.length === 0 && (
+            <div class="card">
+              <p>No images with files yet. As image files get added to the Airtable base, they'll appear here.</p>
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <section>
+              <div class="browse-header">
+                <h2 class="browse-title">Browse</h2>
+                <span class="browse-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+              </div>
+              <div class="grid">
+                {images.map((img) => (
+                  <a class="tile" href={`/image/${img.imageNumber}`}>
+                    <div class="tile-image-wrap">
+                      {img.imageFile ? (
+                        <img src={img.imageFile.url} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                      ) : (
+                        <div class="tile-placeholder">No file</div>
+                      )}
+                    </div>
+                    <div class="tile-body">
+                      {img.caption ? (
+                        <p class="tile-caption">{img.caption}</p>
+                      ) : (
+                        <p class="tile-caption tile-caption-muted">Caption forthcoming</p>
+                      )}
+                      <div class="tile-meta">
+                        <span class="tile-photog">{img.photographerName === 'MH' ? 'Matt Herron' : (img.photographerName ?? 'Unknown')}</span>
+                        <span class="tile-id">#{img.imageNumber}</span>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
     </div>
 
     <footer class="footer">
