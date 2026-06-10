@@ -340,10 +340,22 @@ a:hover { text-decoration: underline; }
   gap: 8px;
   flex: 1;
 }
+.tile-title {
+  font-family: "Times New Roman", "Times", serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .tile-caption {
   font-family: "Times New Roman", "Times", serif;
   font-size: 14.5px;
-  color: var(--ink);
+  color: var(--ink-soft);
   line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 3;

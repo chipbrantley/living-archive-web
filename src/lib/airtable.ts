@@ -49,6 +49,7 @@ export interface AirtableImage {
   imageNumber: string;
   photographerName: string | null;
   printIds: string[];
+  title: string | null;
   caption: string | null;
   imageFile: AirtableImageFile | null;
 }
@@ -93,6 +94,7 @@ export async function fetchImageByNumber(imageNumber: string): Promise<AirtableI
     imageNumber: r.fields['Image number'] ?? imageNumber,
     photographerName: (r.fields['Photographer prefix'] ?? [])[0] ?? null,
     printIds: r.fields['Prints'] ?? [],
+    title: r.fields['Title'] ?? null,
     caption: r.fields['Caption'] ?? null,
     imageFile,
   };
@@ -160,6 +162,7 @@ export async function fetchImagesWithFiles(): Promise<AirtableImage[]> {
       imageNumber: r.fields['Image number'] ?? '',
       photographerName: (r.fields['Photographer prefix'] ?? [])[0] ?? null,
       printIds: r.fields['Prints'] ?? [],
+      title: r.fields['Title'] ?? null,
       caption: r.fields['Caption'] ?? null,
       imageFile,
     } as AirtableImage;

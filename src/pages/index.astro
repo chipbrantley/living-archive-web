@@ -66,11 +66,14 @@ const images = error ? [] : await fetchImagesWithFiles();
                       )}
                     </div>
                     <div class="tile-body">
+                      {img.title && (
+                        <h3 class="tile-title">{img.title}</h3>
+                      )}
                       {img.caption ? (
                         <p class="tile-caption">{img.caption}</p>
-                      ) : (
+                      ) : !img.title ? (
                         <p class="tile-caption tile-caption-muted">Caption forthcoming</p>
-                      )}
+                      ) : null}
                       <div class="tile-meta">
                         <span class="tile-photog">{img.photographerName === 'MH' ? 'Matt Herron' : (img.photographerName ?? 'Unknown')}</span>
                         <span class="tile-id">#{img.imageNumber}</span>

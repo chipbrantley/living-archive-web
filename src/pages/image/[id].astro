@@ -91,10 +91,14 @@ const pageTitle = image
             </div>
           )}
 
-          {image.caption ? (
-            <p class="caption">{image.caption}</p>
-          ) : (
+          {image.title ? (
+            <h1 class="title">{image.title}</h1>
+          ) : !image.caption ? (
             <h1 class="title">Image #{image.imageNumber}</h1>
+          ) : null}
+
+          {image.caption && (
+            <p class="caption">{image.caption}</p>
           )}
 
           <div class="subtitle">
