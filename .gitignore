@@ -19,3 +19,7 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# import script artifacts
+scripts/.takestock_cache/
+scripts/import_report.csv

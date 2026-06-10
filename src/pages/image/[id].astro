@@ -115,12 +115,6 @@ const watermarkLine = photographerFullName
             <span class="id-mono">Archive ID: {image.imageNumber}</span>
           </div>
 
-          {prints.length === 0 && (
-            <div class="notice">
-              No prints in the inventory for this image yet.
-            </div>
-          )}
-
           {prints.length > 0 && (
             <div class="section">
               <div class="section-title">Prints in inventory · {prints.length}</div>
