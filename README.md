@@ -1,6 +1,6 @@
-# The Living Archive — web
+# Living Archive — web
 
-The first live page of the Living Archive, pulling data from the Airtable base.
+The first live page of Living Archive, pulling data from the Airtable base.
 
 Built with [Astro](https://astro.build) + the Netlify adapter.
 
