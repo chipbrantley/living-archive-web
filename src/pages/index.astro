@@ -60,7 +60,15 @@ const images = error ? [] : await fetchImagesWithFiles();
                   <a class="tile" href={`/image/${img.imageNumber}`}>
                     <div class="tile-image-wrap">
                       {img.imageFile ? (
-                        <img src={img.imageFile.url} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                        <>
+                          <img src={img.imageFile.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                          <span class="image-watermark image-watermark--tile">
+                            {(() => {
+                              const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
+                              return photog ? `© ${photog} / Living Archive` : 'Living Archive';
+                            })()}
+                          </span>
+                        </>
                       ) : (
                         <div class="tile-placeholder">No file</div>
                       )}

@@ -28,6 +28,12 @@ if (!imageId) {
 const pageTitle = image
   ? `Image ${image.imageNumber} — Living Archive`
   : `Image not found — Living Archive`;
+
+const photographerFullName =
+  image?.photographerName === 'MH' ? 'Matt Herron' : (image?.photographerName ?? null);
+const watermarkLine = photographerFullName
+  ? `© ${photographerFullName} / Living Archive`
+  : 'Living Archive';
 ---
 
 <html lang="en">
@@ -77,12 +83,13 @@ const pageTitle = image
           {image.imageFile ? (
             <figure class="hero-image-wrap">
               <img
-                src={image.imageFile.url}
+                src={image.imageFile.displayUrl}
                 alt={image.caption ?? `Matt Herron #${image.imageNumber}`}
-                width={image.imageFile.width}
-                height={image.imageFile.height}
+                width={image.imageFile.displayWidth}
+                height={image.imageFile.displayHeight}
                 loading="eager"
               />
+              <span class="image-watermark">{watermarkLine}</span>
             </figure>
           ) : (
             <div class="hero-placeholder">

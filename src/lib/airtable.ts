@@ -42,6 +42,13 @@ export interface AirtableImageFile {
   width?: number;
   height?: number;
   filename?: string;
+  // Lo-res variant safe for public display.
+  // Airtable's "large" thumbnail caps at ~1000px on the long side — plenty
+  // for the browser, useless for any meaningful print. Falls back to the
+  // original URL if Airtable hasn't generated the thumbnail yet.
+  displayUrl: string;
+  displayWidth?: number;
+  displayHeight?: number;
 }
 
 export interface AirtableImage {
@@ -80,12 +87,16 @@ export async function fetchImageByNumber(imageNumber: string): Promise<AirtableI
   // We take the first attachment as the canonical file.
   const attachments = (r.fields['Image file'] ?? []) as any[];
   const firstAttachment = attachments[0];
+  const large = firstAttachment?.thumbnails?.large;
   const imageFile: AirtableImageFile | null = firstAttachment
     ? {
         url: firstAttachment.url,
         width: firstAttachment.width,
         height: firstAttachment.height,
         filename: firstAttachment.filename,
+        displayUrl: large?.url ?? firstAttachment.url,
+        displayWidth: large?.width ?? firstAttachment.width,
+        displayHeight: large?.height ?? firstAttachment.height,
       }
     : null;
 
@@ -149,12 +160,16 @@ export async function fetchImagesWithFiles(): Promise<AirtableImage[]> {
   return (data.records ?? []).map((r: any) => {
     const attachments = (r.fields['Image file'] ?? []) as any[];
     const firstAttachment = attachments[0];
+    const large = firstAttachment?.thumbnails?.large;
     const imageFile: AirtableImageFile | null = firstAttachment
       ? {
           url: firstAttachment.url,
           width: firstAttachment.width,
           height: firstAttachment.height,
           filename: firstAttachment.filename,
+          displayUrl: large?.url ?? firstAttachment.url,
+          displayWidth: large?.width ?? firstAttachment.width,
+          displayHeight: large?.height ?? firstAttachment.height,
         }
       : null;
     return {
