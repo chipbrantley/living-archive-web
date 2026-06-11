@@ -840,3 +840,25 @@ a.chip-person:hover { text-decoration: none; border-color: var(--accent); }
   margin-bottom: 4px;
 }
 .date-taken { font-size: 13.5px; color: var(--ink-soft); font-weight: 500; }
+
+/* Curated caption with collapsible original */
+.caption-original {
+  margin: -6px 0 14px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  max-width: 800px;
+}
+.caption-original summary {
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.caption-original p {
+  margin-top: 6px;
+  font-family: "Times New Roman", "Times", serif;
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}

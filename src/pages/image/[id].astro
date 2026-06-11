@@ -121,12 +121,23 @@ const watermarkLine = photographerFullName
             <h1 class="title">Image #{image.imageNumber}</h1>
           ) : null}
 
-          {image.caption && (
+          {image.displayCaption ? (
+            <>
+              <div class="caption-kicker">Caption · Living Archive</div>
+              <p class="caption">{image.displayCaption}</p>
+              {image.caption && image.caption !== image.displayCaption && (
+                <details class="caption-original">
+                  <summary>Original caption · Take Stock</summary>
+                  <p>{image.caption}</p>
+                </details>
+              )}
+            </>
+          ) : image.caption ? (
             <>
               <div class="caption-kicker">Original caption · Take Stock</div>
               <p class="caption">{image.caption}</p>
             </>
-          )}
+          ) : null}
 
           {(people.length > 0 || places.length > 0 || events.length > 0 || orgs.length > 0) && (
             <div class="chips">
