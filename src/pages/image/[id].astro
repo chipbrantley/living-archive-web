@@ -231,6 +231,20 @@ const watermarkLine = photographerFullName
         const initials = (name) =>
           name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
+        // Defeat browser address-autofill: browsers ignore autocomplete="off"
+        // on address-looking fields, but they skip readonly inputs. Start
+        // every text field readonly and unlock on focus — invisible to the
+        // user, invisible to the autofill heuristics. (The honeypot stays
+        // writable on purpose: bots are welcome to fill it.)
+        form.querySelectorAll('input[type="text"]').forEach((el) => {
+          if (el.classList.contains('contrib-hp')) return;
+          el.setAttribute('autocomplete', 'off');
+          el.setAttribute('readonly', '');
+          const unlock = () => el.removeAttribute('readonly');
+          el.addEventListener('focus', unlock);
+          el.addEventListener('pointerdown', unlock);
+        });
+
         /**
          * Generic typeahead.
          *  input: text input element
