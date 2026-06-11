@@ -1,7 +1,7 @@
 ---
 import '../../styles/global.css';
-import { fetchImageByNumber, fetchImageChips } from '../../lib/airtable';
-import type { AirtableImage, PersonChip, PlaceChip } from '../../lib/airtable';
+import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airtable';
+import type { AirtableImage, PersonChip, PlaceChip, LogEntry } from '../../lib/airtable';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
@@ -9,6 +9,7 @@ const imageId = id ?? '';
 let image: AirtableImage | null = null;
 let people: PersonChip[] = [];
 let places: PlaceChip[] = [];
+let log: LogEntry[] = [];
 let error: string | null = null;
 
 if (!imageId) {
@@ -18,8 +19,12 @@ if (!imageId) {
     // The Living Archive surface deliberately shows nothing of the print
     // inventory — the commercial side links here, never the reverse.
     image = await fetchImageByNumber(imageId);
-    if (image && (image.identificationIds.length || image.placeIds.length)) {
-      ({ people, places } = await fetchImageChips(image.identificationIds, image.placeIds));
+    if (image && (image.identificationIds.length || image.placeIds.length || image.suggestionIds.length)) {
+      ({ people, places, log } = await fetchImageChips(
+        image.identificationIds,
+        image.placeIds,
+        image.suggestionIds
+      ));
     }
   } catch (e) {
     error = e instanceof Error ? e.message : 'Unknown error.';
@@ -121,6 +126,7 @@ const watermarkLine = photographerFullName
                 <span class={`chip chip-person${p.verified ? '' : ' chip-unverified'}`}>
                   <span class="chip-avatar">{monogram(p.name)}</span>
                   {p.name}
+                  {p.home && <span class="chip-home">· of {p.home}</span>}
                 </span>
               ))}
             </div>
@@ -133,6 +139,20 @@ const watermarkLine = photographerFullName
             <span class="id-mono">Archive ID: {image.imageNumber}</span>
           </div>
 
+        </div>
+      )}
+
+      {image && log.length > 0 && (
+        <div class="card log-card">
+          <div class="section-title">What the community has taught us</div>
+          <ul class="log-list">
+            {log.map((entry) => (
+              <li class="log-row">
+                <span class="log-text">{entry.text}</span>
+                {entry.date && <span class="log-date">{prettyDate(entry.date)}</span>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

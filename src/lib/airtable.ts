@@ -61,6 +61,7 @@ export interface AirtableImage {
   imageFile: AirtableImageFile | null;
   identificationIds: string[];
   placeIds: string[];
+  suggestionIds: string[];
 }
 
 export interface AirtablePrint {
@@ -168,46 +169,85 @@ function mapImageRecord(r: any): AirtableImage {
     imageFile,
     identificationIds: r.fields['Identifications'] ?? [],
     placeIds: r.fields['Places'] ?? [],
+    suggestionIds: r.fields['Suggestions'] ?? [],
   };
 }
 
 export interface PersonChip {
   name: string;
   verified: boolean;
+  home: string | null; // the person's own place ("of Marion") — distinct from where the photo was taken
 }
 export interface PlaceChip {
   name: string;
   slug: string;
 }
+export interface LogEntry {
+  text: string;
+  date: string | null; // ISO date
+}
+
+const prettyDate = (iso: string | null): string | null => {
+  if (!iso) return null;
+  const d = new Date(iso + 'T00:00:00');
+  return isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+};
 
 /**
- * Chips for an image detail page: identified people (dashed = unverified,
- * per the design language) and linked places (each linking to its page).
+ * The image page's connective tissue: person chips (dashed = unverified),
+ * place chips (link to place pages), and the contribution log — Verified
+ * identifications and Approved suggestions, displayed as the archive's
+ * learning history. Pending material never appears publicly.
  */
 export async function fetchImageChips(
   identificationIds: string[],
-  placeIds: string[]
-): Promise<{ people: PersonChip[]; places: PlaceChip[] }> {
+  placeIds: string[],
+  suggestionIds: string[] = []
+): Promise<{ people: PersonChip[]; places: PlaceChip[]; log: LogEntry[] }> {
   const people: PersonChip[] = [];
+  const log: LogEntry[] = [];
   if (identificationIds.length > 0) {
     const formula = `OR(${identificationIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
     const idData = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
-    const personIds: { id: string; verified: boolean }[] = [];
+    const personIds: { id: string; verified: boolean; on: string | null }[] = [];
     for (const r of idData.records ?? []) {
       const pid = (r.fields['Person'] ?? [])[0];
       if (pid) {
-        personIds.push({ id: pid, verified: r.fields['Verification status'] === 'Verified' });
+        personIds.push({
+          id: pid,
+          verified: r.fields['Verification status'] === 'Verified',
+          on: r.fields['Suggested on'] ?? null,
+        });
       }
     }
     if (personIds.length > 0) {
       const pFormula = `OR(${personIds.map((p) => `RECORD_ID()='${p.id}'`).join(',')})`;
       const pData = await airtable('/People', { filterByFormula: pFormula, pageSize: '100' });
-      const namesById: Record<string, string> = {};
-      for (const r of pData.records ?? []) namesById[r.id] = r.fields['Name'] ?? '';
+      const byId: Record<string, { name: string; homePlaceIds: string[] }> = {};
+      for (const r of pData.records ?? []) {
+        byId[r.id] = { name: r.fields['Name'] ?? '', homePlaceIds: r.fields['Places'] ?? [] };
+      }
+      // Resolve hometown names for "of Marion" chip context.
+      const homeIds = [...new Set(Object.values(byId).flatMap((p) => p.homePlaceIds))];
+      const homeNames: Record<string, string> = {};
+      if (homeIds.length > 0) {
+        const hFormula = `OR(${homeIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+        const hData = await airtable('/Places', { filterByFormula: hFormula, pageSize: '100' });
+        for (const r of hData.records ?? []) homeNames[r.id] = r.fields['Name'] ?? '';
+      }
       for (const p of personIds) {
-        const name = namesById[p.id];
-        if (name && !people.some((x) => x.name === name)) {
-          people.push({ name, verified: p.verified });
+        const person = byId[p.id];
+        if (person?.name && !people.some((x) => x.name === person.name)) {
+          const home = person.homePlaceIds.map((id) => homeNames[id]).filter(Boolean)[0] ?? null;
+          people.push({ name: person.name, verified: p.verified, home });
+          if (p.verified) {
+            log.push({
+              text: `${person.name} identified in this photograph`,
+              date: p.on,
+            });
+          }
         }
       }
     }
@@ -222,8 +262,23 @@ export async function fetchImageChips(
     }
     places.sort((a, b) => a.name.localeCompare(b.name));
   }
-  return { people, places };
+  if (suggestionIds.length > 0) {
+    const formula = `OR(${suggestionIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/Suggestions', { filterByFormula: formula, pageSize: '100' });
+    for (const r of data.records ?? []) {
+      if (r.fields['Status'] !== 'Approved') continue;
+      const fieldName = r.fields['Field name'] ?? 'Context';
+      const value = (r.fields['Proposed value'] ?? '').trim();
+      if (!value) continue;
+      const label = fieldName === 'Editorial notes' ? 'Community context' : fieldName;
+      log.push({ text: `${label}: ${value}`, date: r.fields['Submitted on'] ?? null });
+    }
+  }
+  log.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+  return { people, places, log };
 }
+
+export { prettyDate };
 
 export interface AirtablePlace {
   id: string;
