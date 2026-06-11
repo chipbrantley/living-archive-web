@@ -133,15 +133,59 @@ const watermarkLine = photographerFullName
             </div>
           )}
 
-          {!image.caption && (
-            <div class="section" style="margin-top:32px">
-              <div class="notice">
-                <strong>What's next:</strong> caption (from Take Stock ingest), identified people,
-                event &amp; location, Roll context. Everything from here forward is a matter of
-                plugging in fields we already have in the schema.
-              </div>
+        </div>
+      )}
+
+      {image && (
+        <div class="contrib" id="contrib-card" data-image-number={image.imageNumber}>
+          <div class="contrib-head">Help us learn about this image</div>
+          <p class="contrib-sub">
+            Do you recognize someone? Were you there, or do you know someone who was?
+            Every detail helps return these photographs to the people and communities
+            who lived this history.
+          </p>
+          <form id="contrib-form" autocomplete="off" novalidate>
+            <div class="contrib-people" id="people-box">
+              <input
+                id="person-input"
+                type="text"
+                placeholder="Identify someone in this image — type a name…"
+                aria-label="Identify someone in this image"
+              />
             </div>
-          )}
+            <div class="contrib-suggest" id="person-suggest" role="listbox" hidden></div>
+            <textarea
+              id="contrib-note"
+              rows="3"
+              placeholder="What else can you tell us? Anything you recognize, where you think it was taken, context that helps…"
+            ></textarea>
+            <div class="contrib-meta-row">
+              <input id="contrib-name" type="text" placeholder="Your name (optional)" />
+              <input
+                id="contrib-email"
+                type="email"
+                placeholder="Email (optional — if you're open to follow-up)"
+              />
+            </div>
+            <input
+              id="contrib-website"
+              name="website"
+              type="text"
+              tabindex="-1"
+              autocomplete="off"
+              aria-hidden="true"
+              class="contrib-hp"
+            />
+            <div class="contrib-actions">
+              <span class="contrib-hint" id="contrib-hint"></span>
+              <button type="submit" class="contrib-submit" id="contrib-submit">Submit</button>
+            </div>
+          </form>
+          <div class="contrib-thanks" id="contrib-thanks" hidden>
+            <strong>Thank you.</strong> Your contribution has been received and will be
+            reviewed by the archive team. It's exactly this kind of knowledge that keeps
+            this a living archive.
+          </div>
         </div>
       )}
     </div>
@@ -149,5 +193,162 @@ const watermarkLine = photographerFullName
     <footer class="footer">
       <div class="footer-brand">Living Archive</div>
     </footer>
+
+    <script is:inline>
+      (function () {
+        const card = document.getElementById('contrib-card');
+        if (!card) return;
+        const imageNumber = card.dataset.imageNumber;
+        const input = document.getElementById('person-input');
+        const box = document.getElementById('people-box');
+        const suggest = document.getElementById('person-suggest');
+        const noteEl = document.getElementById('contrib-note');
+        const form = document.getElementById('contrib-form');
+        const hint = document.getElementById('contrib-hint');
+        const submitBtn = document.getElementById('contrib-submit');
+        const chips = []; // { id?, name }
+
+        const initials = (name) =>
+          name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((w) => w[0].toUpperCase())
+            .join('');
+
+        function renderChips() {
+          box.querySelectorAll('.pending-chip').forEach((c) => c.remove());
+          chips.forEach((p, i) => {
+            const chip = document.createElement('span');
+            chip.className = 'pending-chip' + (p.id ? '' : ' pending-chip-new');
+            chip.textContent = p.name + (p.id ? '' : ' (new)');
+            const x = document.createElement('button');
+            x.type = 'button';
+            x.className = 'pc-x';
+            x.setAttribute('aria-label', 'remove ' + p.name);
+            x.textContent = '×';
+            x.addEventListener('click', () => {
+              chips.splice(i, 1);
+              renderChips();
+            });
+            chip.appendChild(x);
+            box.insertBefore(chip, input);
+          });
+        }
+
+        function hideSuggest() {
+          suggest.hidden = true;
+          suggest.innerHTML = '';
+        }
+
+        function addPerson(p) {
+          if (!chips.some((c) => (p.id && c.id === p.id) || c.name === p.name)) {
+            chips.push(p);
+            renderChips();
+          }
+          input.value = '';
+          hideSuggest();
+          input.focus();
+        }
+
+        let timer = null;
+        let lastQuery = '';
+        input.addEventListener('input', () => {
+          const q = input.value.trim();
+          lastQuery = q;
+          clearTimeout(timer);
+          if (q.length < 2) {
+            hideSuggest();
+            return;
+          }
+          timer = setTimeout(async () => {
+            try {
+              const res = await fetch('/api/people?q=' + encodeURIComponent(q));
+              const data = await res.json();
+              if (input.value.trim() !== q) return; // stale response
+              suggest.innerHTML = '';
+              (data.results || []).forEach((p) => {
+                const row = document.createElement('div');
+                row.className = 'suggest-item';
+                row.setAttribute('role', 'option');
+                row.innerHTML =
+                  '<span class="suggest-avatar"></span><span class="suggest-name"></span><span class="suggest-meta"></span>';
+                row.querySelector('.suggest-avatar').textContent = initials(p.name);
+                row.querySelector('.suggest-name').textContent = p.name;
+                row.querySelector('.suggest-meta').textContent = p.meta || '';
+                row.addEventListener('click', () => addPerson({ id: p.id, name: p.name }));
+                suggest.appendChild(row);
+              });
+              const addNew = document.createElement('div');
+              addNew.className = 'suggest-item suggest-new';
+              addNew.setAttribute('role', 'option');
+              addNew.textContent = '+ Suggest "' + q + '" as a name we don’t have yet';
+              addNew.addEventListener('click', () => addPerson({ name: q }));
+              suggest.appendChild(addNew);
+              suggest.hidden = false;
+            } catch (e) {
+              hideSuggest();
+            }
+          }, 200);
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const first = suggest.querySelector('.suggest-item');
+            if (!suggest.hidden && first) first.click();
+            else if (input.value.trim().length >= 2) addPerson({ name: input.value.trim() });
+          } else if (e.key === 'Backspace' && input.value === '' && chips.length) {
+            chips.pop();
+            renderChips();
+          } else if (e.key === 'Escape') {
+            hideSuggest();
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!suggest.contains(e.target) && e.target !== input) hideSuggest();
+        });
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const note = noteEl.value.trim();
+          if (chips.length === 0 && note === '') {
+            hint.textContent = 'Name someone or tell us something first.';
+            return;
+          }
+          hint.textContent = '';
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Sending…';
+          try {
+            const res = await fetch('/api/suggest', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                imageNumber,
+                people: chips,
+                note,
+                name: document.getElementById('contrib-name').value,
+                email: document.getElementById('contrib-email').value,
+                website: document.getElementById('contrib-website').value,
+              }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+              form.hidden = true;
+              document.getElementById('contrib-thanks').hidden = false;
+            } else {
+              hint.textContent = data.error || 'Something went wrong — please try again.';
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Submit';
+            }
+          } catch (err) {
+            hint.textContent = 'Network problem — please try again.';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit';
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

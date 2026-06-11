@@ -423,3 +423,183 @@ a:hover { text-decoration: underline; }
   font-family: "Times New Roman", serif;
   font-size: 15px; font-weight: 700; color: #fff;
 }
+
+/* ---------------------------------------------------------------------- */
+/* Contribution card — the cream "Help us learn about this image" surface */
+
+.contrib {
+  margin-top: 24px;
+  background: var(--cream);
+  border: 1px solid var(--cream-border);
+  border-radius: 14px;
+  padding: 22px 24px;
+}
+.contrib-head {
+  font-weight: 700;
+  font-size: 16px;
+  color: #6b4a0c;
+  margin-bottom: 6px;
+}
+.contrib-sub {
+  font-size: 13.5px;
+  color: #6b4a0c;
+  opacity: 0.85;
+  margin-bottom: 14px;
+  max-width: 640px;
+}
+.contrib-people {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--cream-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.contrib-people input {
+  flex: 1;
+  min-width: 220px;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: transparent;
+}
+.pending-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border-strong);
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 3px 6px 3px 10px;
+  font-size: 13px;
+}
+.pending-chip-new {
+  border-style: dashed;
+}
+.pc-x {
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 3px;
+}
+.pc-x:hover { color: var(--rust); }
+.contrib-suggest {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  margin-top: 4px;
+  box-shadow: 0 6px 18px rgba(31, 29, 26, 0.08);
+  overflow: hidden;
+}
+.suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.suggest-item:hover { background: var(--accent-soft); }
+.suggest-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1px solid var(--border-strong);
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.suggest-meta {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.suggest-new {
+  border-top: 1px dashed var(--border-strong);
+  color: var(--rust);
+  font-size: 13px;
+}
+.contrib textarea {
+  width: 100%;
+  margin-top: 10px;
+  background: var(--surface);
+  border: 1px solid var(--cream-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  resize: vertical;
+}
+.contrib textarea:focus,
+.contrib-people:focus-within,
+.contrib-meta-row input:focus {
+  outline: 2px solid var(--cream-border);
+  outline-offset: 0;
+}
+.contrib-meta-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.contrib-meta-row input {
+  flex: 1;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--cream-border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.contrib-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.contrib-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 14px;
+}
+.contrib-hint {
+  font-size: 13px;
+  color: var(--rust);
+}
+.contrib-submit {
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 22px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.contrib-submit:hover { background: #000; }
+.contrib-submit:disabled { opacity: 0.6; cursor: default; }
+.contrib-thanks {
+  font-size: 14.5px;
+  color: #6b4a0c;
+  max-width: 560px;
+}
