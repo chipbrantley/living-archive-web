@@ -156,8 +156,16 @@ export async function fetchImagesWithFiles(): Promise<AirtableImage[]> {
     'sort[0][field]': 'Image number',
     'sort[0][direction]': 'asc',
   };
-  const data = await airtable('/Images', params);
-  return (data.records ?? []).map((r: any) => {
+  // Airtable returns at most 100 records per request; follow the offset
+  // cursor until the listing is complete.
+  const records: any[] = [];
+  let offset: string | undefined;
+  do {
+    const data = await airtable('/Images', offset ? { ...params, offset } : params);
+    records.push(...(data.records ?? []));
+    offset = data.offset;
+  } while (offset);
+  return records.map((r: any) => {
     const attachments = (r.fields['Image file'] ?? []) as any[];
     const firstAttachment = attachments[0];
     const large = firstAttachment?.thumbnails?.large;

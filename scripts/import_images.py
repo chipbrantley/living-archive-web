@@ -61,6 +61,48 @@ MAX_UPLOAD_BYTES = 4_500_000     # Airtable content API caps at 5 MB
 CACHE_DIR = os.path.join(PROJECT_DIR, "scripts", ".takestock_cache")
 REPORT_PATH = os.path.join(PROJECT_DIR, "scripts", "import_report.csv")
 
+# SPECPAT-3595 blow-ups from contact sheet gb523ng2378_0124, visually verified
+# as job 167 roll 06 (frame 21 matches Take Stock 1670621 — see memory file
+# herron-contact-sheet-decoding). Adjusted variants only; sheets 0122 and 0128
+# stay deferred pending Ben's roll confirmation.
+VERIFIED_3595 = {
+    "gb523ng2378_0124_07_Ralph_Bunche_0001_adjusted.jpg": "1670607",
+    "gb523ng2378_0124_12_Ralph_Bunche_0001_adjusted.jpg": "1670612",
+    "gb523ng2378_0124_19_Ralph_Bunche_0001_adjusted.jpg": "1670619",
+    "gb523ng2378_0124_20_Ralph_Bunche_0001_adjusted.jpg": "1670620",
+    "gb523ng2378_0124_21_Ralph_Bunche_0001_adjusted.jpg": "1670621",
+    "gb523ng2378_0124_24_Ralph_Bunche_0001_adjusted.jpg": "1670624",
+    "gb523ng2378_0124_31_Coleman_Woodson_0001_adjusted.jpg": "1670631",
+}
+
+
+def parse_filename(fname):
+    """Map a filename to a 7-digit Herron number.
+
+    Returns (number, style) or (None, reason-it-was-deferred)."""
+    m = re.match(r"^(\d{7})", fname)
+    if m:
+        return m.group(1), "woody"
+    # Stanford full form: M2866_b6_f11_s167-13_5A_positive.jpg
+    # A-frame rule (verified on the physical sheets): 5A = frame 05.
+    m = re.match(
+        r"^M2866_b6_f11_s167-(\d{1,2})_(\d{1,2})A?_positive(?: \d+)?\.jpe?g$",
+        fname, re.I,
+    )
+    if m:
+        return f"167{int(m.group(1)):02d}{int(m.group(2)):02d}", "stanford"
+    if fname in VERIFIED_3595:
+        return VERIFIED_3595[fname], "3595-verified"
+    if re.search(r"_accurate\.|_0001b_", fname):
+        return None, "deferred: non-display variant (accurate/alt)"
+    if re.match(r"^gb523ng2378_(0122|0128)_", fname):
+        return None, "deferred: sheet roll unconfirmed (Ben Q1)"
+    if re.match(r"^m2866_b6_f11_s\d{1,2}_", fname, re.I):
+        return None, "deferred: bare s-number unconfirmed (Ben Q2)"
+    if re.match(r"^m2866_b54_", fname, re.I):
+        return None, "deferred: box 54 color slides unconfirmed (Ben Q3)"
+    return None, "deferred: unrecognized pattern"
+
 
 def load_env():
     env = {}
@@ -212,14 +254,25 @@ def main():
         print("NOTE: no AIRTABLE_PAT_WRITE in .env.local — using AIRTABLE_PAT.")
         print("      If that token is read-only, writes will fail with 403.\n")
 
-    # 1. Scan source folder.
-    files = sorted(
-        f for f in os.listdir(args.source)
-        if f.lower().endswith((".jpg", ".jpeg")) and re.match(r"^\d{7}", f)
-    )
-    if args.limit:
-        files = files[: args.limit]
-    print(f"{len(files)} image files in {args.source}\n")
+    # 1. Scan source folder (recursive) and parse each filename.
+    all_jpgs = []
+    for root, dirs, fnames in os.walk(args.source):
+        for f in sorted(fnames):
+            if f.lower().endswith((".jpg", ".jpeg")):
+                all_jpgs.append((f, os.path.join(root, f)))
+    parsed, deferred, seen_nums = [], [], {}
+    for fname, path in all_jpgs:
+        num, style = parse_filename(fname)
+        if num is None:
+            deferred.append((fname, style))
+        elif num in seen_nums:
+            deferred.append((fname, f"deferred: duplicate of {seen_nums[num]} (same number {num})"))
+        else:
+            seen_nums[num] = fname
+            parsed.append((fname, path, num, style))
+    files = parsed[: args.limit] if args.limit else parsed
+    print(f"{len(all_jpgs)} jpgs in {args.source}")
+    print(f"{len(parsed)} parseable, {len(deferred)} deferred/skipped\n")
 
     # 2. Pull existing records and build the number -> record map.
     print("Fetching existing Image records…")
@@ -243,9 +296,7 @@ def main():
 
     # 3. Process.
     rows, n_attach, n_create, n_skip, n_err = [], 0, 0, 0, 0
-    for i, fname in enumerate(files, 1):
-        num = fname[:7]
-        path = os.path.join(args.source, fname)
+    for i, (fname, path, num, style) in enumerate(files, 1):
         rec, how = find_record(num)
         has_file = bool(rec and rec["fields"].get(FLD_IMAGE_FILE))
 
@@ -297,12 +348,19 @@ def main():
             rows.append([fname, num, f"ERROR {e.code}: {body}", title, caption, how or ""])
             print(f"    ERROR {e.code}: {body}")
 
-    # 4. Report.
+    # 4. Report (processed files + every deferred file with its reason).
     with open(REPORT_PATH, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["filename", "herron_number", "action", "takestock_title",
                     "takestock_caption", "match_note"])
         w.writerows(rows)
+        for fname, reason in deferred:
+            w.writerow([fname, "", reason, "", "", ""])
+    if deferred:
+        from collections import Counter
+        print("\nDeferred (tracked in report, safe to re-import later):")
+        for reason, c in Counter(r for _, r in deferred).most_common():
+            print(f"  {c:4d}  {reason}")
 
     print(f"\n{'DRY RUN — nothing written.' if not args.live else 'LIVE RUN complete.'}")
     if args.live:
