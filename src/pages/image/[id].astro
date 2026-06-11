@@ -145,17 +145,23 @@ const watermarkLine = photographerFullName
             who lived this history.
           </p>
           <form id="contrib-form" autocomplete="off" novalidate>
-            <div class="contrib-people contrib-people-primary" id="people-box">
-              <input
-                id="person-input"
-                type="text"
-                placeholder="Identify someone in this image — type a name…"
-                aria-label="Identify someone in this image"
-              />
-            </div>
-            <div class="contrib-suggest" id="person-suggest" role="listbox" hidden></div>
-
             <div class="contrib-details" id="contrib-details">
+              <div class="detail-row">
+                <span class="detail-label">People</span>
+                <div class="detail-fields">
+                  <div class="ta-wrap">
+                    <div class="contrib-people detail-chips" id="people-box">
+                      <input
+                        id="person-input"
+                        type="text"
+                        placeholder="Identify someone in this image — type a name…"
+                        aria-label="Identify someone in this image"
+                      />
+                    </div>
+                    <div class="contrib-suggest ta-drop" id="person-suggest" role="listbox" hidden></div>
+                  </div>
+                </div>
+              </div>
               <div class="detail-row">
                 <span class="detail-label">Location</span>
                 <div class="detail-fields">
