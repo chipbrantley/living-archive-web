@@ -175,6 +175,7 @@ function mapImageRecord(r: any): AirtableImage {
 
 export interface PersonChip {
   name: string;
+  slug: string;
   verified: boolean;
 }
 export interface PlaceChip {
@@ -241,7 +242,7 @@ export async function fetchImageChips(
       for (const p of personIds) {
         const person = byId[p.id];
         if (person?.name && !people.some((x) => x.name === person.name)) {
-          people.push({ name: person.name, verified: p.verified });
+          people.push({ name: person.name, slug: slugifyPlace(person.name), verified: p.verified });
           // A person's own places become contextual tags on the image —
           // "Marion is here because Doris is here," not a photo location.
           for (const hid of person.homePlaceIds) {
@@ -291,6 +292,95 @@ export async function fetchImageChips(
 }
 
 export { prettyDate };
+
+export interface AirtablePerson {
+  id: string;
+  name: string;
+  affiliation: string | null;
+  lifespan: string | null;
+  bio: string | null;
+  bioSource: string | null;
+  aliases: string[];
+  backgroundLinks: string[];
+  placeIds: string[];
+  identificationIds: string[];
+}
+
+// Shared person index (id, name, slug) so person-page lookups don't refetch
+// ~800 records per request. Module-level cache, same pattern as /api/people.
+let peopleIndexCache: { at: number; index: { id: string; name: string; slug: string }[] } | null = null;
+const PEOPLE_INDEX_TTL_MS = 2 * 60 * 1000;
+
+async function peopleIndex(): Promise<{ id: string; name: string; slug: string }[]> {
+  if (peopleIndexCache && Date.now() - peopleIndexCache.at < PEOPLE_INDEX_TTL_MS) {
+    return peopleIndexCache.index;
+  }
+  const index: { id: string; name: string; slug: string }[] = [];
+  let offset: string | undefined;
+  do {
+    const params: Record<string, string> = { 'fields[]': 'Name', pageSize: '100' };
+    if (offset) params.offset = offset;
+    const data = await airtable('/People', params);
+    for (const r of data.records ?? []) {
+      const name = r.fields['Name'] ?? '';
+      if (name) index.push({ id: r.id, name, slug: slugifyPlace(name) });
+    }
+    offset = data.offset;
+  } while (offset);
+  peopleIndexCache = { at: Date.now(), index };
+  return index;
+}
+
+export async function fetchPersonBySlug(slug: string): Promise<AirtablePerson | null> {
+  const index = await peopleIndex();
+  const hit = index.find((p) => p.slug === slug);
+  if (!hit) return null;
+  const r = (await airtable(`/People/${hit.id}`)) as any;
+  const f = r.fields ?? {};
+  const lines = (v: unknown): string[] =>
+    String(v ?? '').split('\n').map((s: string) => s.trim()).filter(Boolean);
+  return {
+    id: r.id,
+    name: f['Name'] ?? hit.name,
+    affiliation: f['Affiliation'] ?? null,
+    lifespan: f['Lifespan'] ?? null,
+    bio: f['Bio'] ?? null,
+    bioSource: f['Bio source'] ?? null,
+    aliases: lines(f['Aliases']),
+    backgroundLinks: lines(f['Background / context links']),
+    placeIds: f['Places'] ?? [],
+    identificationIds: f['Identifications'] ?? [],
+  };
+}
+
+/** Image record ids from a person's identifications. */
+export async function fetchIdentifiedImageIds(identificationIds: string[]): Promise<string[]> {
+  const imageIds: string[] = [];
+  for (let i = 0; i < identificationIds.length; i += 50) {
+    const chunk = identificationIds.slice(i, i + 50);
+    const formula = `OR(${chunk.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
+    for (const r of data.records ?? []) {
+      for (const imgId of r.fields['Image'] ?? []) {
+        if (!imageIds.includes(imgId)) imageIds.push(imgId);
+      }
+    }
+  }
+  return imageIds;
+}
+
+/** Resolve Places record ids to chips. */
+export async function fetchPlaceChipsByIds(placeIds: string[]): Promise<PlaceChip[]> {
+  if (placeIds.length === 0) return [];
+  const formula = `OR(${placeIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+  const data = await airtable('/Places', { filterByFormula: formula, pageSize: '100' });
+  const chips: PlaceChip[] = [];
+  for (const r of data.records ?? []) {
+    const name = r.fields['Name'] ?? '';
+    if (name) chips.push({ name, slug: slugifyPlace(name) });
+  }
+  return chips;
+}
 
 export interface AirtablePlace {
   id: string;

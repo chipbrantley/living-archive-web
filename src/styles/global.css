@@ -807,3 +807,13 @@ a:hover { text-decoration: underline; }
   color: var(--ink-faint);
   font-weight: 400;
 }
+
+/* Person pages */
+.person-places { margin-bottom: 14px; }
+.bio-source { font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+.aliases { font-size: 13px; color: var(--ink-soft); margin-top: 10px; font-style: italic; }
+.context-links { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.person-block-title a { color: var(--ink); }
+.person-block-title a:hover { color: var(--rust); }
+a.chip-person { color: var(--ink); }
+a.chip-person:hover { text-decoration: none; border-color: var(--accent); }

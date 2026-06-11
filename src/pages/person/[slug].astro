@@ -1,0 +1,168 @@
+---
+import '../../styles/global.css';
+import {
+  fetchPersonBySlug,
+  fetchIdentifiedImageIds,
+  fetchImagesByIds,
+  fetchPlaceChipsByIds,
+} from '../../lib/airtable';
+import type { AirtablePerson, AirtableImage, PlaceChip } from '../../lib/airtable';
+
+const { slug } = Astro.params;
+
+let person: AirtablePerson | null = null;
+let images: AirtableImage[] = [];
+let placeChips: PlaceChip[] = [];
+let error: string | null = null;
+
+try {
+  person = await fetchPersonBySlug(slug ?? '');
+  if (person) {
+    if (person.identificationIds.length > 0) {
+      const imageIds = await fetchIdentifiedImageIds(person.identificationIds);
+      images = (await fetchImagesByIds(imageIds)).filter((i) => i.imageFile);
+    }
+    placeChips = await fetchPlaceChipsByIds(person.placeIds);
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Unknown error.';
+}
+
+const pageTitle = person ? `${person.name} — Living Archive` : 'Person not found — Living Archive';
+const metaLine = person
+  ? [person.lifespan, person.affiliation].filter(Boolean).join(' · ')
+  : '';
+const isUrl = (s: string) => /^https?:\/\//i.test(s);
+const linkLabel = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">Living Archive</span>
+          <span class="brand-sub">A Proximity Partners project</span>
+        </a>
+      </div>
+    </header>
+
+    <nav class="breadcrumb">
+      <a href="/">Browse</a>
+      <span class="sep">›</span>
+      <span>{person ? person.name : 'Person'}</span>
+    </nav>
+
+    <div class="page">
+      {error && (
+        <div class="card">
+          <div class="error-card">
+            <strong>Something went wrong.</strong>
+            <pre>{error}</pre>
+          </div>
+        </div>
+      )}
+
+      {!error && !person && (
+        <div class="card">
+          <h1 class="title">Person not found</h1>
+          <p>
+            We don't have a person by that name yet.
+            <a href="/">Back to browse</a>
+          </p>
+        </div>
+      )}
+
+      {person && (
+        <>
+          <section class="intro person-intro">
+            <h1 class="intro-title">{person.name}</h1>
+            {metaLine && <div class="place-line">{metaLine}</div>}
+            {placeChips.length > 0 && (
+              <div class="chips person-places">
+                {placeChips.map((p) => (
+                  <a class="chip chip-place" href={`/place/${p.slug}`}>{p.name}</a>
+                ))}
+              </div>
+            )}
+            {person.bio && <p class="intro-text">{person.bio}</p>}
+            {person.bio && person.bioSource && (
+              <div class="bio-source">Source: {person.bioSource}</div>
+            )}
+            {person.aliases.length > 0 && (
+              <div class="aliases">Also appears in records as: {person.aliases.join(' · ')}</div>
+            )}
+          </section>
+
+          {images.length === 0 && (
+            <div class="card">
+              <p>
+                No photographs are linked to {person.name} yet. Identifications
+                made through image pages will gather here once reviewed.
+              </p>
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <section>
+              <div class="browse-header">
+                <h2 class="browse-title">Appears in {images.length} {images.length === 1 ? 'photograph' : 'photographs'}</h2>
+              </div>
+              <div class="grid">
+                {images.map((img) => (
+                  <a class="tile" href={`/image/${img.imageNumber}`}>
+                    <div class="tile-image-wrap">
+                      <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                      <span class="image-watermark image-watermark--tile">
+                        {(() => {
+                          const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
+                          return photog ? `© ${photog} / Living Archive` : 'Living Archive';
+                        })()}
+                      </span>
+                    </div>
+                    <div class="tile-body">
+                      {img.title && <h3 class="tile-title">{img.title}</h3>}
+                      {img.caption && (
+                        <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {person.backgroundLinks.length > 0 && (
+            <section class="section">
+              <div class="section-title">Background and context</div>
+              <ul class="context-links">
+                {person.backgroundLinks.map((link) =>
+                  isUrl(link) ? (
+                    <li><a href={link} rel="noopener" target="_blank">{linkLabel(link)}</a></li>
+                  ) : (
+                    <li>{link}</li>
+                  )
+                )}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">Living Archive</div>
+    </footer>
+  </body>
+</html>

@@ -138,7 +138,7 @@ const placeLine = place
                 return (
                   <div class="person-block">
                     <h3 class="person-block-title">
-                      {person.name}
+                      <a href={`/person/${person.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}>{person.name}</a>
                       <span class="person-block-sub">
                         of {place.name} · appears in {person.images.length}{' '}
                         {person.images.length === 1 ? 'photograph' : 'photographs'}

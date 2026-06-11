@@ -127,10 +127,14 @@ const watermarkLine = photographerFullName
                 >{p.name}</a>
               ))}
               {people.map((p) => (
-                <span class={`chip chip-person${p.verified ? '' : ' chip-unverified'}`}>
+                <a
+                  class={`chip chip-person${p.verified ? '' : ' chip-unverified'}`}
+                  href={`/person/${p.slug}`}
+                  title={p.verified ? `Identified in this photograph` : `Identification awaiting review`}
+                >
                   <span class="chip-avatar">{monogram(p.name)}</span>
                   {p.name}
-                </span>
+                </a>
               ))}
             </div>
           )}
@@ -142,20 +146,6 @@ const watermarkLine = photographerFullName
             <span class="id-mono">Archive ID: {image.imageNumber}</span>
           </div>
 
-        </div>
-      )}
-
-      {image && log.length > 0 && (
-        <div class="card log-card">
-          <div class="section-title">What the community has taught us</div>
-          <ul class="log-list">
-            {log.map((entry) => (
-              <li class="log-row">
-                <span class="log-text">{entry.text}</span>
-                {entry.date && <span class="log-date">{prettyDate(entry.date)}</span>}
-              </li>
-            ))}
-          </ul>
         </div>
       )}
 
@@ -255,6 +245,20 @@ const watermarkLine = photographerFullName
             reviewed by the archive team. It's exactly this kind of knowledge that keeps
             this a living archive.
           </div>
+        </div>
+      )}
+
+      {image && log.length > 0 && (
+        <div class="card log-card">
+          <div class="section-title">What the community has taught us</div>
+          <ul class="log-list">
+            {log.map((entry) => (
+              <li class="log-row">
+                <span class="log-text">{entry.text}</span>
+                {entry.date && <span class="log-date">{prettyDate(entry.date)}</span>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
