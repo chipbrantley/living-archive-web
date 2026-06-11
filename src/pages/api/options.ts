@@ -17,7 +17,7 @@ import countiesByState from '../../data/counties.json';
 
 const PAT = import.meta.env.AIRTABLE_PAT;
 const BASE_ID = import.meta.env.AIRTABLE_BASE_ID;
-const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_TTL_MS = 2 * 60 * 1000;
 
 const STATES = [
   'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
