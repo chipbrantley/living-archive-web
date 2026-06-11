@@ -1,25 +1,21 @@
 ---
 import '../../styles/global.css';
-import { fetchImageByNumber, fetchPrintsByIds } from '../../lib/airtable';
-import type { AirtableImage, AirtablePrint } from '../../lib/airtable';
+import { fetchImageByNumber } from '../../lib/airtable';
+import type { AirtableImage } from '../../lib/airtable';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
 
 let image: AirtableImage | null = null;
-let prints: AirtablePrint[] = [];
 let error: string | null = null;
 
 if (!imageId) {
   error = 'No image number provided.';
 } else {
   try {
+    // The Living Archive surface deliberately shows nothing of the print
+    // inventory — the commercial side links here, never the reverse.
     image = await fetchImageByNumber(imageId);
-    if (image && image.printIds.length > 0) {
-      prints = await fetchPrintsByIds(image.printIds);
-      // Sort by PP # for stable display.
-      prints.sort((a, b) => a.ppNumber.localeCompare(b.ppNumber));
-    }
   } catch (e) {
     error = e instanceof Error ? e.message : 'Unknown error.';
   }
@@ -114,24 +110,6 @@ const watermarkLine = photographerFullName
             )}
             <span class="id-mono">Archive ID: {image.imageNumber}</span>
           </div>
-
-          {prints.length > 0 && (
-            <div class="section">
-              <div class="section-title">Prints in inventory · {prints.length}</div>
-              <div class="print-list">
-                {prints.map((p) => (
-                  <div class="print-row">
-                    <span class="print-id">{p.ppNumber}</span>
-                    {p.size && <span class="print-size">{p.size}</span>}
-                    {p.mounting && <span class="print-mounting">{p.mounting}</span>}
-                    {p.authentication && p.authentication !== 'n/a' && (
-                      <span class="print-auth">{p.authentication}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
         </div>
       )}
