@@ -1,12 +1,13 @@
 ---
 import '../../styles/global.css';
-import { fetchPlaceBySlug, fetchImagesByIds } from '../../lib/airtable';
-import type { AirtablePlace, AirtableImage } from '../../lib/airtable';
+import { fetchPlaceBySlug, fetchImagesByIds, fetchPeopleWithImages } from '../../lib/airtable';
+import type { AirtablePlace, AirtableImage, PersonWithImages } from '../../lib/airtable';
 
 const { slug } = Astro.params;
 
 let place: AirtablePlace | null = null;
 let images: AirtableImage[] = [];
+let people: PersonWithImages[] = [];
 let error: string | null = null;
 
 try {
@@ -14,9 +15,15 @@ try {
   if (place && place.imageIds.length > 0) {
     images = (await fetchImagesByIds(place.imageIds)).filter((i) => i.imageFile);
   }
+  if (place && place.peopleIds.length > 0) {
+    people = await fetchPeopleWithImages(place.peopleIds);
+  }
 } catch (e) {
   error = e instanceof Error ? e.message : 'Unknown error.';
 }
+
+// Don't repeat images already shown in the taken-here grid.
+const takenHereIds = new Set(images.map((i) => i.id));
 
 const pageTitle = place ? `${place.name} — Living Archive` : 'Place not found — Living Archive';
 const placeLine = place
@@ -78,7 +85,7 @@ const placeLine = place
             {place.notes && <p class="intro-text">{place.notes}</p>}
           </section>
 
-          {images.length === 0 && (
+          {images.length === 0 && people.length === 0 && (
             <div class="card">
               <p>
                 No images are linked to {place.name} yet. As photographs are
@@ -117,6 +124,50 @@ const placeLine = place
                   </a>
                 ))}
               </div>
+            </section>
+          )}
+
+          {people.filter((p) => p.images.some((img) => !takenHereIds.has(img.id)) || p.images.length > 0).length > 0 && (
+            <section class="people-of-place">
+              <div class="browse-header">
+                <h2 class="browse-title">People of {place.name}</h2>
+              </div>
+              {people.map((person) => {
+                const personImages = person.images.filter((img) => !takenHereIds.has(img.id));
+                if (person.images.length === 0) return null;
+                return (
+                  <div class="person-block">
+                    <h3 class="person-block-title">
+                      {person.name}
+                      <span class="person-block-sub">
+                        of {place.name} · appears in {person.images.length}{' '}
+                        {person.images.length === 1 ? 'photograph' : 'photographs'}
+                      </span>
+                    </h3>
+                    <div class="grid">
+                      {(personImages.length ? personImages : person.images).map((img) => (
+                        <a class="tile" href={`/image/${img.imageNumber}`}>
+                          <div class="tile-image-wrap">
+                            <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                            <span class="image-watermark image-watermark--tile">
+                              {(() => {
+                                const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
+                                return photog ? `© ${photog} / Living Archive` : 'Living Archive';
+                              })()}
+                            </span>
+                          </div>
+                          <div class="tile-body">
+                            {img.title && <h3 class="tile-title">{img.title}</h3>}
+                            {img.caption && (
+                              <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
+                            )}
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </section>
           )}
         </>

@@ -202,6 +202,13 @@ export interface AirtablePlace {
   county: string | null;
   notes: string | null;
   imageIds: string[];
+  peopleIds: string[];
+}
+
+export interface PersonWithImages {
+  id: string;
+  name: string;
+  images: AirtableImage[];
 }
 
 export const slugifyPlace = (name: string): string =>
@@ -231,7 +238,52 @@ export async function fetchPlaceBySlug(slug: string): Promise<AirtablePlace | nu
     county: r.fields['County'] ?? null,
     notes: r.fields['Notes'] ?? null,
     imageIds: r.fields['Images'] ?? [],
+    peopleIds: r.fields['People'] ?? [],
   };
+}
+
+/**
+ * For "people of this place": fetch each person's identified images.
+ * Person -> Identifications -> Images. Includes unverified identifications
+ * (inner-circle phase; tighten to Verified-only when the site goes public).
+ */
+export async function fetchPeopleWithImages(peopleIds: string[]): Promise<PersonWithImages[]> {
+  if (peopleIds.length === 0) return [];
+  const people: { id: string; name: string; identificationIds: string[] }[] = [];
+  for (let i = 0; i < peopleIds.length; i += 50) {
+    const chunk = peopleIds.slice(i, i + 50);
+    const formula = `OR(${chunk.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/People', { filterByFormula: formula, pageSize: '100' });
+    for (const r of data.records ?? []) {
+      people.push({
+        id: r.id,
+        name: r.fields['Name'] ?? '',
+        identificationIds: r.fields['Identifications'] ?? [],
+      });
+    }
+  }
+  const result: PersonWithImages[] = [];
+  for (const person of people) {
+    if (person.identificationIds.length === 0) {
+      result.push({ id: person.id, name: person.name, images: [] });
+      continue;
+    }
+    const imageIds: string[] = [];
+    for (let i = 0; i < person.identificationIds.length; i += 50) {
+      const chunk = person.identificationIds.slice(i, i + 50);
+      const formula = `OR(${chunk.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+      const data = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
+      for (const r of data.records ?? []) {
+        for (const imgId of r.fields['Image'] ?? []) {
+          if (!imageIds.includes(imgId)) imageIds.push(imgId);
+        }
+      }
+    }
+    const images = imageIds.length ? (await fetchImagesByIds(imageIds)).filter((i) => i.imageFile) : [];
+    result.push({ id: person.id, name: person.name, images });
+  }
+  result.sort((a, b) => b.images.length - a.images.length || a.name.localeCompare(b.name));
+  return result;
 }
 
 /** Fetch Image records by record id, in chunks (formula length limits). */

@@ -717,3 +717,25 @@ a:hover { text-decoration: underline; }
   margin: -8px 0 14px;
 }
 .tile-caption-empty { font-style: italic; color: var(--ink-faint); }
+
+/* "People of {place}" section on place pages */
+.people-of-place { margin-top: 36px; }
+.person-block { margin-bottom: 28px; }
+.person-block-title {
+  font-family: "Times New Roman", "Times", serif;
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.person-block-sub {
+  font-family: "Inter", -apple-system, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
