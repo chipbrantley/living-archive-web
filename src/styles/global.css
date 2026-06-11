@@ -684,3 +684,25 @@ a:hover { text-decoration: underline; }
   .detail-label { padding-top: 0; }
   .detail-grid, .detail-grid-3 { grid-template-columns: 1fr; }
 }
+
+/* Always-open contribution form: primary person field + per-field dropdowns */
+.contrib-people-primary { padding: 11px 14px; }
+.contrib-people-primary input { font-size: 15px; min-width: 260px; }
+.contrib-details {
+  border-top: 0;
+  border-bottom: 1px dashed var(--cream-border);
+  padding-bottom: 16px;
+  margin-bottom: 2px;
+}
+.ta-wrap { position: relative; }
+.ta-wrap input { width: 100%; }
+.ta-drop {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin-top: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}

@@ -145,7 +145,7 @@ const watermarkLine = photographerFullName
             who lived this history.
           </p>
           <form id="contrib-form" autocomplete="off" novalidate>
-            <div class="contrib-people" id="people-box">
+            <div class="contrib-people contrib-people-primary" id="people-box">
               <input
                 id="person-input"
                 type="text"
@@ -154,26 +154,19 @@ const watermarkLine = photographerFullName
               />
             </div>
             <div class="contrib-suggest" id="person-suggest" role="listbox" hidden></div>
-            <textarea
-              id="contrib-note"
-              rows="3"
-              placeholder="What else can you tell us? Anything you recognize, where you think it was taken, context that helps…"
-            ></textarea>
-            <button type="button" class="contrib-toggle" id="contrib-toggle" aria-expanded="false">
-              + Add specific details (location, date, events, organizations)
-            </button>
-            <div class="contrib-details" id="contrib-details" hidden>
+
+            <div class="contrib-details" id="contrib-details">
               <div class="detail-row">
                 <span class="detail-label">Location</span>
                 <div class="detail-fields">
                   <div class="detail-grid">
-                    <input id="det-state" type="text" placeholder="State" />
-                    <input id="det-county" type="text" placeholder="County" />
+                    <div class="ta-wrap"><input id="det-state" type="text" placeholder="State" /></div>
+                    <div class="ta-wrap"><input id="det-county" type="text" placeholder="County" /></div>
                   </div>
                   <div class="detail-grid detail-grid-3">
-                    <input id="det-city" type="text" placeholder="City or town" />
-                    <input id="det-neighborhood" type="text" placeholder="Neighborhood" />
-                    <input id="det-venue" type="text" placeholder="Location name — church, school, office…" />
+                    <div class="ta-wrap"><input id="det-city" type="text" placeholder="City or town" /></div>
+                    <div class="ta-wrap"><input id="det-neighborhood" type="text" placeholder="Neighborhood" /></div>
+                    <div class="ta-wrap"><input id="det-venue" type="text" placeholder="Location name — church, school, office…" /></div>
                   </div>
                 </div>
               </div>
@@ -189,20 +182,31 @@ const watermarkLine = photographerFullName
               <div class="detail-row">
                 <span class="detail-label">Event or activity</span>
                 <div class="detail-fields">
-                  <div class="contrib-people detail-chips" id="events-box">
-                    <input id="event-input" type="text" placeholder="e.g. Selma–Montgomery march — press Enter to add" />
+                  <div class="ta-wrap">
+                    <div class="contrib-people detail-chips" id="events-box">
+                      <input id="event-input" type="text" placeholder="Start typing — e.g. Selma to Montgomery March" />
+                    </div>
                   </div>
                 </div>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Organizations</span>
                 <div class="detail-fields">
-                  <div class="contrib-people detail-chips" id="orgs-box">
-                    <input id="org-input" type="text" placeholder="e.g. SNCC, COFO — press Enter to add" />
+                  <div class="ta-wrap">
+                    <div class="contrib-people detail-chips" id="orgs-box">
+                      <input id="org-input" type="text" placeholder="Start typing — e.g. SNCC, COFO" />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
+            <textarea
+              id="contrib-note"
+              rows="3"
+              placeholder="Anything else? Stories, context, connections — whatever the fields above can't hold."
+            ></textarea>
+
             <input
               id="contrib-website"
               name="website"
@@ -235,177 +239,193 @@ const watermarkLine = photographerFullName
         const card = document.getElementById('contrib-card');
         if (!card) return;
         const imageNumber = card.dataset.imageNumber;
-        const input = document.getElementById('person-input');
-        const box = document.getElementById('people-box');
-        const suggest = document.getElementById('person-suggest');
-        const noteEl = document.getElementById('contrib-note');
         const form = document.getElementById('contrib-form');
+        const noteEl = document.getElementById('contrib-note');
         const hint = document.getElementById('contrib-hint');
         const submitBtn = document.getElementById('contrib-submit');
-        const chips = []; // { id?, name }
 
         const initials = (name) =>
-          name
-            .split(/\s+/)
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((w) => w[0].toUpperCase())
-            .join('');
+          name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
-        function renderChips() {
-          box.querySelectorAll('.pending-chip').forEach((c) => c.remove());
-          chips.forEach((p, i) => {
-            const chip = document.createElement('span');
-            chip.className = 'pending-chip' + (p.id ? '' : ' pending-chip-new');
-            chip.textContent = p.name + (p.id ? '' : ' (new)');
-            const x = document.createElement('button');
-            x.type = 'button';
-            x.className = 'pc-x';
-            x.setAttribute('aria-label', 'remove ' + p.name);
-            x.textContent = '×';
-            x.addEventListener('click', () => {
-              chips.splice(i, 1);
-              renderChips();
-            });
-            chip.appendChild(x);
-            box.insertBefore(chip, input);
+        /**
+         * Generic typeahead.
+         *  input: text input element
+         *  drop: dropdown element (created if not given)
+         *  url(q): endpoint returning {results:[{id?,name,meta}]}
+         *  onPick(item): item has {id?, name, isNew?}
+         *  newLabel(q): label for the "+ suggest new" row, or null for closed sets
+         *  avatars: render monogram circles (people)
+         */
+        function typeahead({ input, drop, url, onPick, newLabel, avatars }) {
+          if (!drop) {
+            drop = document.createElement('div');
+            drop.className = 'contrib-suggest ta-drop';
+            drop.hidden = true;
+            (input.closest('.ta-wrap') || input.parentElement).appendChild(drop);
+          }
+          const hide = () => { drop.hidden = true; drop.innerHTML = ''; };
+          let timer = null;
+          input.addEventListener('input', () => {
+            const q = input.value.trim();
+            clearTimeout(timer);
+            if (q.length < 1) { hide(); return; }
+            timer = setTimeout(async () => {
+              try {
+                const res = await fetch(url(q));
+                const data = await res.json();
+                if (input.value.trim() !== q) return; // stale
+                drop.innerHTML = '';
+                const results = data.results || [];
+                results.forEach((item) => {
+                  const row = document.createElement('div');
+                  row.className = 'suggest-item';
+                  row.setAttribute('role', 'option');
+                  if (avatars) {
+                    const av = document.createElement('span');
+                    av.className = 'suggest-avatar';
+                    av.textContent = initials(item.name);
+                    row.appendChild(av);
+                  }
+                  const nm = document.createElement('span');
+                  nm.className = 'suggest-name';
+                  nm.textContent = item.name;
+                  row.appendChild(nm);
+                  if (item.meta) {
+                    const mt = document.createElement('span');
+                    mt.className = 'suggest-meta';
+                    mt.textContent = item.meta;
+                    row.appendChild(mt);
+                  }
+                  row.addEventListener('click', () => { onPick(item); hide(); });
+                  drop.appendChild(row);
+                });
+                if (newLabel && q.length >= 2) {
+                  const addNew = document.createElement('div');
+                  addNew.className = 'suggest-item suggest-new';
+                  addNew.setAttribute('role', 'option');
+                  addNew.textContent = newLabel(q);
+                  addNew.addEventListener('click', () => { onPick({ name: q, isNew: true }); hide(); });
+                  drop.appendChild(addNew);
+                }
+                drop.hidden = drop.children.length === 0;
+              } catch (e) { hide(); }
+            }, 180);
           });
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              const first = drop.querySelector('.suggest-item');
+              if (!drop.hidden && first) first.click();
+            } else if (e.key === 'Escape') hide();
+          });
+          document.addEventListener('click', (e) => {
+            if (!drop.contains(e.target) && e.target !== input) hide();
+          });
+          return { hide };
         }
 
-        function hideSuggest() {
-          suggest.hidden = true;
-          suggest.innerHTML = '';
-        }
-
-        function addPerson(p) {
-          if (!chips.some((c) => (p.id && c.id === p.id) || c.name === p.name)) {
-            chips.push(p);
-            renderChips();
-          }
-          input.value = '';
-          hideSuggest();
-          input.focus();
-        }
-
-        let timer = null;
-        let lastQuery = '';
-        input.addEventListener('input', () => {
-          const q = input.value.trim();
-          lastQuery = q;
-          clearTimeout(timer);
-          if (q.length < 2) {
-            hideSuggest();
-            return;
-          }
-          timer = setTimeout(async () => {
-            try {
-              const res = await fetch('/api/people?q=' + encodeURIComponent(q));
-              const data = await res.json();
-              if (input.value.trim() !== q) return; // stale response
-              suggest.innerHTML = '';
-              (data.results || []).forEach((p) => {
-                const row = document.createElement('div');
-                row.className = 'suggest-item';
-                row.setAttribute('role', 'option');
-                row.innerHTML =
-                  '<span class="suggest-avatar"></span><span class="suggest-name"></span><span class="suggest-meta"></span>';
-                row.querySelector('.suggest-avatar').textContent = initials(p.name);
-                row.querySelector('.suggest-name').textContent = p.name;
-                row.querySelector('.suggest-meta').textContent = p.meta || '';
-                row.addEventListener('click', () => addPerson({ id: p.id, name: p.name }));
-                suggest.appendChild(row);
-              });
-              const addNew = document.createElement('div');
-              addNew.className = 'suggest-item suggest-new';
-              addNew.setAttribute('role', 'option');
-              addNew.textContent = '+ Suggest "' + q + '" as a name we don’t have yet';
-              addNew.addEventListener('click', () => addPerson({ name: q }));
-              suggest.appendChild(addNew);
-              suggest.hidden = false;
-            } catch (e) {
-              hideSuggest();
-            }
-          }, 200);
-        });
-
-        input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            const first = suggest.querySelector('.suggest-item');
-            if (!suggest.hidden && first) first.click();
-            else if (input.value.trim().length >= 2) addPerson({ name: input.value.trim() });
-          } else if (e.key === 'Backspace' && input.value === '' && chips.length) {
-            chips.pop();
-            renderChips();
-          } else if (e.key === 'Escape') {
-            hideSuggest();
-          }
-        });
-
-        document.addEventListener('click', (e) => {
-          if (!suggest.contains(e.target) && e.target !== input) hideSuggest();
-        });
-
-        // --- Specific details: toggle + free-entry chip inputs ---
-        const toggle = document.getElementById('contrib-toggle');
-        const details = document.getElementById('contrib-details');
-        toggle.addEventListener('click', () => {
-          const open = details.hidden;
-          details.hidden = !open;
-          toggle.setAttribute('aria-expanded', String(open));
-          toggle.textContent = open
-            ? '− Hide details'
-            : '+ Add specific details (location, date, events, organizations)';
-        });
-
-        function chipInput(boxId, inputId) {
-          const cBox = document.getElementById(boxId);
-          const cInput = document.getElementById(inputId);
-          const values = [];
+        /** Chip collection rendered inside a .contrib-people box, before its input. */
+        function chipSet(box, input) {
+          const values = []; // {id?, name, isNew?}
           function render() {
-            cBox.querySelectorAll('.pending-chip').forEach((c) => c.remove());
+            box.querySelectorAll('.pending-chip').forEach((c) => c.remove());
             values.forEach((v, i) => {
               const chip = document.createElement('span');
-              chip.className = 'pending-chip';
-              chip.textContent = v;
+              chip.className = 'pending-chip' + (v.isNew ? ' pending-chip-new' : '');
+              chip.textContent = v.name + (v.isNew ? ' (new)' : '');
               const x = document.createElement('button');
               x.type = 'button';
               x.className = 'pc-x';
-              x.setAttribute('aria-label', 'remove ' + v);
+              x.setAttribute('aria-label', 'remove ' + v.name);
               x.textContent = '×';
-              x.addEventListener('click', () => {
-                values.splice(i, 1);
-                render();
-              });
+              x.addEventListener('click', () => { values.splice(i, 1); render(); });
               chip.appendChild(x);
-              cBox.insertBefore(chip, cInput);
+              box.insertBefore(chip, input);
             });
           }
-          function commit() {
-            const v = cInput.value.trim();
-            if (v && !values.includes(v)) {
-              values.push(v);
-              render();
-            }
-            cInput.value = '';
-          }
-          cInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ',') {
-              e.preventDefault();
-              commit();
-            } else if (e.key === 'Backspace' && cInput.value === '' && values.length) {
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && input.value === '' && values.length) {
               values.pop();
               render();
             }
           });
-          cInput.addEventListener('blur', commit);
-          return values;
+          return {
+            values,
+            add(v) {
+              if (!values.some((c) => (v.id && c.id === v.id) || c.name === v.name)) {
+                values.push(v);
+                render();
+              }
+              input.value = '';
+              input.focus();
+            },
+          };
         }
-        const eventChips = chipInput('events-box', 'event-input');
-        const orgChips = chipInput('orgs-box', 'org-input');
 
+        // --- People: chips + typeahead with avatars and suggest-new ---
+        const personInput = document.getElementById('person-input');
+        const personChips = chipSet(document.getElementById('people-box'), personInput);
+        typeahead({
+          input: personInput,
+          drop: document.getElementById('person-suggest'),
+          url: (q) => '/api/people?q=' + encodeURIComponent(q),
+          onPick: (item) => personChips.add(item),
+          newLabel: (q) => '+ Suggest "' + q + '" as a name we don’t have yet',
+          avatars: true,
+        });
+
+        // --- Location: Places-vocabulary typeaheads (fill-in style) ---
+        const fill = (input) => (item) => { input.value = item.name; };
+        const stateInput = document.getElementById('det-state');
+        typeahead({
+          input: stateInput,
+          url: (q) => '/api/options?type=state&q=' + encodeURIComponent(q),
+          onPick: fill(stateInput),
+          newLabel: null, // closed set
+        });
+        const countyInput = document.getElementById('det-county');
+        typeahead({
+          input: countyInput,
+          url: (q) =>
+            '/api/options?type=county&q=' + encodeURIComponent(q) +
+            '&state=' + encodeURIComponent(stateInput.value.trim()),
+          onPick: fill(countyInput),
+          newLabel: null, // closed set
+        });
+        for (const [id, kind, noun] of [
+          ['det-city', 'city', 'place'],
+          ['det-neighborhood', 'neighborhood', 'neighborhood'],
+          ['det-venue', 'venue', 'location'],
+        ]) {
+          const el = document.getElementById(id);
+          typeahead({
+            input: el,
+            url: (q) => '/api/options?type=' + kind + '&q=' + encodeURIComponent(q),
+            onPick: fill(el),
+            newLabel: (q) => '+ Use "' + q + '" — a ' + noun + ' we don’t have yet',
+          });
+        }
+
+        // --- Events & Organizations: chips + vocabulary typeaheads ---
+        const eventInput = document.getElementById('event-input');
+        const eventChips = chipSet(document.getElementById('events-box'), eventInput);
+        typeahead({
+          input: eventInput,
+          url: (q) => '/api/options?type=event&q=' + encodeURIComponent(q),
+          onPick: (item) => eventChips.add(item),
+          newLabel: (q) => '+ Suggest "' + q + '" as an event we don’t have yet',
+        });
+        const orgInput = document.getElementById('org-input');
+        const orgChips = chipSet(document.getElementById('orgs-box'), orgInput);
+        typeahead({
+          input: orgInput,
+          url: (q) => '/api/options?type=org&q=' + encodeURIComponent(q),
+          onPick: (item) => orgChips.add(item),
+          newLabel: (q) => '+ Suggest "' + q + '" as an organization we don’t have yet',
+        });
+
+        // --- Submit ---
         const detVal = (id) => document.getElementById(id).value.trim();
-
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
           const note = noteEl.value.trim();
@@ -417,13 +437,13 @@ const watermarkLine = photographerFullName
             venue: detVal('det-venue'),
             date: detVal('det-date'),
             approximate: document.getElementById('det-approx').checked,
-            events: eventChips,
-            orgs: orgChips,
+            events: eventChips.values.map((v) => v.name),
+            orgs: orgChips.values.map((v) => v.name),
           };
           const hasDetails = Object.values(detailsPayload).some(
             (v) => (Array.isArray(v) ? v.length : v !== '' && v !== false)
           );
-          if (chips.length === 0 && note === '' && !hasDetails) {
+          if (personChips.values.length === 0 && note === '' && !hasDetails) {
             hint.textContent = 'Name someone or tell us something first.';
             return;
           }
@@ -436,7 +456,7 @@ const watermarkLine = photographerFullName
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 imageNumber,
-                people: chips,
+                people: personChips.values.map((v) => ({ id: v.id, name: v.name })),
                 note,
                 details: detailsPayload,
                 website: document.getElementById('contrib-website').value,
