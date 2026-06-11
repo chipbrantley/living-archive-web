@@ -120,13 +120,16 @@ const watermarkLine = photographerFullName
           {(people.length > 0 || places.length > 0) && (
             <div class="chips">
               {places.map((p) => (
-                <a class="chip chip-place" href={`/place/${p.slug}`}>{p.name}</a>
+                <a
+                  class="chip chip-place"
+                  href={`/place/${p.slug}`}
+                  title={p.via ? `Connected through ${p.via}` : `Photographed in ${p.name}`}
+                >{p.name}</a>
               ))}
               {people.map((p) => (
                 <span class={`chip chip-person${p.verified ? '' : ' chip-unverified'}`}>
                   <span class="chip-avatar">{monogram(p.name)}</span>
                   {p.name}
-                  {p.home && <span class="chip-home">· of {p.home}</span>}
                 </span>
               ))}
             </div>

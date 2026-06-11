@@ -176,11 +176,11 @@ function mapImageRecord(r: any): AirtableImage {
 export interface PersonChip {
   name: string;
   verified: boolean;
-  home: string | null; // the person's own place ("of Marion") — distinct from where the photo was taken
 }
 export interface PlaceChip {
   name: string;
   slug: string;
+  via?: string; // contextual tag: place connected through a person in the image
 }
 export interface LogEntry {
   text: string;
@@ -207,6 +207,7 @@ export async function fetchImageChips(
   suggestionIds: string[] = []
 ): Promise<{ people: PersonChip[]; places: PlaceChip[]; log: LogEntry[] }> {
   const people: PersonChip[] = [];
+  const contextPlaces: PlaceChip[] = [];
   const log: LogEntry[] = [];
   if (identificationIds.length > 0) {
     const formula = `OR(${identificationIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
@@ -240,8 +241,15 @@ export async function fetchImageChips(
       for (const p of personIds) {
         const person = byId[p.id];
         if (person?.name && !people.some((x) => x.name === person.name)) {
-          const home = person.homePlaceIds.map((id) => homeNames[id]).filter(Boolean)[0] ?? null;
-          people.push({ name: person.name, verified: p.verified, home });
+          people.push({ name: person.name, verified: p.verified });
+          // A person's own places become contextual tags on the image —
+          // "Marion is here because Doris is here," not a photo location.
+          for (const hid of person.homePlaceIds) {
+            const name = homeNames[hid];
+            if (name && !contextPlaces.some((c) => c.name === name)) {
+              contextPlaces.push({ name, slug: slugifyPlace(name), via: person.name });
+            }
+          }
           if (p.verified) {
             log.push({
               text: `${person.name} identified in this photograph`,
@@ -261,6 +269,10 @@ export async function fetchImageChips(
       if (name) places.push({ name, slug: slugifyPlace(name) });
     }
     places.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  // Contextual place tags follow the taken-here places, skipping duplicates.
+  for (const c of contextPlaces) {
+    if (!places.some((p) => p.name === c.name)) places.push(c);
   }
   if (suggestionIds.length > 0) {
     const formula = `OR(${suggestionIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
