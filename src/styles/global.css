@@ -817,3 +817,26 @@ a:hover { text-decoration: underline; }
 .person-block-title a:hover { color: var(--rust); }
 a.chip-person { color: var(--ink); }
 a.chip-person:hover { text-decoration: none; border-color: var(--accent); }
+
+/* Event chips + caption source label + date in subtitle */
+.chip-event {
+  background: var(--moss-soft);
+  color: var(--moss);
+  font-weight: 500;
+  border-color: var(--moss-soft);
+}
+.chip-event:hover { text-decoration: none; border-color: var(--moss); }
+.chip-org {
+  background: var(--bg);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.caption-kicker {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.date-taken { font-size: 13.5px; color: var(--ink-soft); font-weight: 500; }

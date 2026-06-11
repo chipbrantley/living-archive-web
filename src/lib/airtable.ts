@@ -62,6 +62,9 @@ export interface AirtableImage {
   identificationIds: string[];
   placeIds: string[];
   suggestionIds: string[];
+  eventIds: string[];
+  orgIds: string[];
+  dateTaken: string | null;
 }
 
 export interface AirtablePrint {
@@ -170,6 +173,9 @@ function mapImageRecord(r: any): AirtableImage {
     identificationIds: r.fields['Identifications'] ?? [],
     placeIds: r.fields['Places'] ?? [],
     suggestionIds: r.fields['Suggestions'] ?? [],
+    eventIds: r.fields['Events'] ?? [],
+    orgIds: r.fields['Organizations'] ?? [],
+    dateTaken: r.fields['Date taken'] ?? null,
   };
 }
 
@@ -202,14 +208,43 @@ const prettyDate = (iso: string | null): string | null => {
  * identifications and Approved suggestions, displayed as the archive's
  * learning history. Pending material never appears publicly.
  */
+export interface EventChip {
+  name: string;
+  slug: string;
+}
+export interface OrgChip {
+  name: string;
+  acronym: string | null;
+}
+
 export async function fetchImageChips(
   identificationIds: string[],
   placeIds: string[],
-  suggestionIds: string[] = []
-): Promise<{ people: PersonChip[]; places: PlaceChip[]; log: LogEntry[] }> {
+  suggestionIds: string[] = [],
+  eventIds: string[] = [],
+  orgIds: string[] = []
+): Promise<{ people: PersonChip[]; places: PlaceChip[]; events: EventChip[]; orgs: OrgChip[]; log: LogEntry[] }> {
   const people: PersonChip[] = [];
   const contextPlaces: PlaceChip[] = [];
+  const events: EventChip[] = [];
+  const orgs: OrgChip[] = [];
   const log: LogEntry[] = [];
+  if (eventIds.length > 0) {
+    const formula = `OR(${eventIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/Events', { filterByFormula: formula, pageSize: '100' });
+    for (const r of data.records ?? []) {
+      const name = r.fields['Name'] ?? '';
+      if (name) events.push({ name, slug: slugifyPlace(name) });
+    }
+  }
+  if (orgIds.length > 0) {
+    const formula = `OR(${orgIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/Organizations', { filterByFormula: formula, pageSize: '100' });
+    for (const r of data.records ?? []) {
+      const name = r.fields['Name'] ?? '';
+      if (name) orgs.push({ name, acronym: r.fields['Acronym'] ?? null });
+    }
+  }
   if (identificationIds.length > 0) {
     const formula = `OR(${identificationIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
     const idData = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
@@ -288,7 +323,7 @@ export async function fetchImageChips(
     }
   }
   log.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
-  return { people, places, log };
+  return { people, places, events, orgs, log };
 }
 
 export { prettyDate };
@@ -367,6 +402,67 @@ export async function fetchIdentifiedImageIds(identificationIds: string[]): Prom
     }
   }
   return imageIds;
+}
+
+export interface AirtableEvent {
+  id: string;
+  name: string;
+  type: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  location: string | null;
+  bio: string | null;
+  bioSource: string | null;
+  backgroundLinks: string[];
+  keyPeopleIds: string[];
+  imageIds: string[];
+}
+
+export async function fetchEventBySlug(slug: string): Promise<AirtableEvent | null> {
+  const records: any[] = [];
+  let offset: string | undefined;
+  do {
+    const params: Record<string, string> = { pageSize: '100' };
+    if (offset) params.offset = offset;
+    const data = await airtable('/Events', params);
+    records.push(...(data.records ?? []));
+    offset = data.offset;
+  } while (offset);
+  const r = records.find((rec) => slugifyPlace(rec.fields['Name'] ?? '') === slug);
+  if (!r) return null;
+  const f = r.fields;
+  const lines = (v: unknown): string[] =>
+    String(v ?? '').split('\n').map((s: string) => s.trim()).filter(Boolean);
+  return {
+    id: r.id,
+    name: f['Name'] ?? '',
+    type: f['Type'] ?? null,
+    startDate: f['Start date'] ?? null,
+    endDate: f['End date'] ?? null,
+    location: f['Location'] ?? null,
+    bio: f['Bio'] ?? null,
+    bioSource: f['Bio source'] ?? null,
+    backgroundLinks: lines(f['Background / context links']),
+    keyPeopleIds: f['Key people'] ?? [],
+    imageIds: f['Images'] ?? [],
+  };
+}
+
+/** Names + slugs for a set of People record ids (key-people rows, etc.). */
+export async function fetchPeopleNamesByIds(ids: string[]): Promise<{ name: string; slug: string }[]> {
+  if (ids.length === 0) return [];
+  const out: { name: string; slug: string }[] = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    const formula = `OR(${chunk.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/People', { filterByFormula: formula, pageSize: '100' });
+    for (const r of data.records ?? []) {
+      const name = r.fields['Name'] ?? '';
+      if (name) out.push({ name, slug: slugifyPlace(name) });
+    }
+  }
+  out.sort((a, b) => a.name.localeCompare(b.name));
+  return out;
 }
 
 /** Resolve Places record ids to chips. */

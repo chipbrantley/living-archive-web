@@ -1,0 +1,178 @@
+---
+import '../../styles/global.css';
+import {
+  fetchEventBySlug,
+  fetchImagesByIds,
+  fetchPeopleNamesByIds,
+  prettyDate,
+} from '../../lib/airtable';
+import type { AirtableEvent, AirtableImage } from '../../lib/airtable';
+
+const { slug } = Astro.params;
+
+let event: AirtableEvent | null = null;
+let images: AirtableImage[] = [];
+let keyPeople: { name: string; slug: string }[] = [];
+let error: string | null = null;
+
+try {
+  event = await fetchEventBySlug(slug ?? '');
+  if (event) {
+    if (event.imageIds.length > 0) {
+      images = (await fetchImagesByIds(event.imageIds)).filter((i) => i.imageFile);
+    }
+    keyPeople = await fetchPeopleNamesByIds(event.keyPeopleIds);
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Unknown error.';
+}
+
+const pageTitle = event ? `${event.name} — Living Archive` : 'Event not found — Living Archive';
+const dateRange = event
+  ? [prettyDate(event.startDate), prettyDate(event.endDate)].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' – ')
+  : '';
+const metaLine = event
+  ? [event.type, dateRange, event.location].filter(Boolean).join(' · ')
+  : '';
+const isUrl = (s: string) => /^https?:\/\//i.test(s);
+const linkLabel = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+const monogram = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">Living Archive</span>
+          <span class="brand-sub">A Proximity Partners project</span>
+        </a>
+      </div>
+    </header>
+
+    <nav class="breadcrumb">
+      <a href="/">Browse</a>
+      <span class="sep">›</span>
+      <span>{event ? event.name : 'Event'}</span>
+    </nav>
+
+    <div class="page">
+      {error && (
+        <div class="card">
+          <div class="error-card">
+            <strong>Something went wrong.</strong>
+            <pre>{error}</pre>
+          </div>
+        </div>
+      )}
+
+      {!error && !event && (
+        <div class="card">
+          <h1 class="title">Event not found</h1>
+          <p>
+            We don't have an event by that name yet.
+            <a href="/">Back to browse</a>
+          </p>
+        </div>
+      )}
+
+      {event && (
+        <>
+          <section class="intro">
+            <h1 class="intro-title">{event.name}</h1>
+            {metaLine && <div class="place-line">{metaLine}</div>}
+            {event.bio && <p class="intro-text">{event.bio}</p>}
+            {event.bio && event.bioSource && (
+              <div class="bio-source">Source: {event.bioSource}</div>
+            )}
+          </section>
+
+          {keyPeople.length > 0 && (
+            <section class="section">
+              <div class="section-title">Key people</div>
+              <div class="chips">
+                {keyPeople.map((p) => (
+                  <a class="chip chip-person" href={`/person/${p.slug}`}>
+                    <span class="chip-avatar">{monogram(p.name)}</span>
+                    {p.name}
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {images.length === 0 && (
+            <div class="card" style="margin-top:24px">
+              <p>
+                No photographs are linked to {event.name} yet. As images are
+                connected to this event — including through contributions —
+                they'll gather here.
+              </p>
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <section class="section">
+              <div class="browse-header">
+                <h2 class="browse-title">Photographs from this event</h2>
+                <span class="browse-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+              </div>
+              <div class="grid">
+                {images.map((img) => (
+                  <a class="tile" href={`/image/${img.imageNumber}`}>
+                    <div class="tile-image-wrap">
+                      <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                      <span class="image-watermark image-watermark--tile">
+                        {(() => {
+                          const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
+                          return photog ? `© ${photog} / Living Archive` : 'Living Archive';
+                        })()}
+                      </span>
+                    </div>
+                    <div class="tile-body">
+                      {img.title && <h3 class="tile-title">{img.title}</h3>}
+                      {img.caption && (
+                        <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {event.backgroundLinks.length > 0 && (
+            <section class="section">
+              <div class="section-title">Background and context</div>
+              <ul class="context-links">
+                {event.backgroundLinks.map((link) =>
+                  isUrl(link) ? (
+                    <li><a href={link} rel="noopener" target="_blank">{linkLabel(link)}</a></li>
+                  ) : (
+                    <li>{link}</li>
+                  )
+                )}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">Living Archive</div>
+    </footer>
+  </body>
+</html>

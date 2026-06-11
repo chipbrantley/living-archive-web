@@ -1,7 +1,7 @@
 ---
 import '../../styles/global.css';
 import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airtable';
-import type { AirtableImage, PersonChip, PlaceChip, LogEntry } from '../../lib/airtable';
+import type { AirtableImage, PersonChip, PlaceChip, EventChip, OrgChip, LogEntry } from '../../lib/airtable';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
@@ -9,6 +9,8 @@ const imageId = id ?? '';
 let image: AirtableImage | null = null;
 let people: PersonChip[] = [];
 let places: PlaceChip[] = [];
+let events: EventChip[] = [];
+let orgs: OrgChip[] = [];
 let log: LogEntry[] = [];
 let error: string | null = null;
 
@@ -19,11 +21,17 @@ if (!imageId) {
     // The Living Archive surface deliberately shows nothing of the print
     // inventory — the commercial side links here, never the reverse.
     image = await fetchImageByNumber(imageId);
-    if (image && (image.identificationIds.length || image.placeIds.length || image.suggestionIds.length)) {
-      ({ people, places, log } = await fetchImageChips(
+    if (
+      image &&
+      (image.identificationIds.length || image.placeIds.length ||
+        image.suggestionIds.length || image.eventIds.length || image.orgIds.length)
+    ) {
+      ({ people, places, events, orgs, log } = await fetchImageChips(
         image.identificationIds,
         image.placeIds,
-        image.suggestionIds
+        image.suggestionIds,
+        image.eventIds,
+        image.orgIds
       ));
     }
   } catch (e) {
@@ -114,11 +122,17 @@ const watermarkLine = photographerFullName
           ) : null}
 
           {image.caption && (
-            <p class="caption">{image.caption}</p>
+            <>
+              <div class="caption-kicker">Original caption · Take Stock</div>
+              <p class="caption">{image.caption}</p>
+            </>
           )}
 
-          {(people.length > 0 || places.length > 0) && (
+          {(people.length > 0 || places.length > 0 || events.length > 0 || orgs.length > 0) && (
             <div class="chips">
+              {events.map((ev) => (
+                <a class="chip chip-event" href={`/event/${ev.slug}`}>{ev.name}</a>
+              ))}
               {places.map((p) => (
                 <a
                   class="chip chip-place"
@@ -136,6 +150,11 @@ const watermarkLine = photographerFullName
                   {p.name}
                 </a>
               ))}
+              {orgs.map((o) => (
+                <span class="chip chip-org" title={o.acronym ? o.name : undefined}>
+                  {o.acronym || o.name}
+                </span>
+              ))}
             </div>
           )}
 
@@ -143,6 +162,7 @@ const watermarkLine = photographerFullName
             {image.photographerName && (
               <span class="photog-pill">{image.photographerName === 'MH' ? 'Matt Herron' : image.photographerName}</span>
             )}
+            {image.dateTaken && <span class="date-taken">{prettyDate(image.dateTaken)}</span>}
             <span class="id-mono">Archive ID: {image.imageNumber}</span>
           </div>
 
