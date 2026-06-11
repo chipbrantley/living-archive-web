@@ -59,6 +59,8 @@ export interface AirtableImage {
   title: string | null;
   caption: string | null;
   imageFile: AirtableImageFile | null;
+  identificationIds: string[];
+  placeIds: string[];
 }
 
 export interface AirtablePrint {
@@ -81,34 +83,7 @@ export async function fetchImageByNumber(imageNumber: string): Promise<AirtableI
     maxRecords: '1',
   });
   if (!data.records?.length) return null;
-  const r = data.records[0];
-
-  // Airtable attachment fields return an array of objects with url, width, height, etc.
-  // We take the first attachment as the canonical file.
-  const attachments = (r.fields['Image file'] ?? []) as any[];
-  const firstAttachment = attachments[0];
-  const large = firstAttachment?.thumbnails?.large;
-  const imageFile: AirtableImageFile | null = firstAttachment
-    ? {
-        url: firstAttachment.url,
-        width: firstAttachment.width,
-        height: firstAttachment.height,
-        filename: firstAttachment.filename,
-        displayUrl: large?.url ?? firstAttachment.url,
-        displayWidth: large?.width ?? firstAttachment.width,
-        displayHeight: large?.height ?? firstAttachment.height,
-      }
-    : null;
-
-  return {
-    id: r.id,
-    imageNumber: r.fields['Image number'] ?? imageNumber,
-    photographerName: (r.fields['Photographer prefix'] ?? [])[0] ?? null,
-    printIds: r.fields['Prints'] ?? [],
-    title: r.fields['Title'] ?? null,
-    caption: r.fields['Caption'] ?? null,
-    imageFile,
-  };
+  return mapImageRecord(data.records[0]);
 }
 
 /**
@@ -191,7 +166,63 @@ function mapImageRecord(r: any): AirtableImage {
     title: r.fields['Title'] ?? null,
     caption: r.fields['Caption'] ?? null,
     imageFile,
+    identificationIds: r.fields['Identifications'] ?? [],
+    placeIds: r.fields['Places'] ?? [],
   };
+}
+
+export interface PersonChip {
+  name: string;
+  verified: boolean;
+}
+export interface PlaceChip {
+  name: string;
+  slug: string;
+}
+
+/**
+ * Chips for an image detail page: identified people (dashed = unverified,
+ * per the design language) and linked places (each linking to its page).
+ */
+export async function fetchImageChips(
+  identificationIds: string[],
+  placeIds: string[]
+): Promise<{ people: PersonChip[]; places: PlaceChip[] }> {
+  const people: PersonChip[] = [];
+  if (identificationIds.length > 0) {
+    const formula = `OR(${identificationIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const idData = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
+    const personIds: { id: string; verified: boolean }[] = [];
+    for (const r of idData.records ?? []) {
+      const pid = (r.fields['Person'] ?? [])[0];
+      if (pid) {
+        personIds.push({ id: pid, verified: r.fields['Verification status'] === 'Verified' });
+      }
+    }
+    if (personIds.length > 0) {
+      const pFormula = `OR(${personIds.map((p) => `RECORD_ID()='${p.id}'`).join(',')})`;
+      const pData = await airtable('/People', { filterByFormula: pFormula, pageSize: '100' });
+      const namesById: Record<string, string> = {};
+      for (const r of pData.records ?? []) namesById[r.id] = r.fields['Name'] ?? '';
+      for (const p of personIds) {
+        const name = namesById[p.id];
+        if (name && !people.some((x) => x.name === name)) {
+          people.push({ name, verified: p.verified });
+        }
+      }
+    }
+  }
+  const places: PlaceChip[] = [];
+  if (placeIds.length > 0) {
+    const formula = `OR(${placeIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/Places', { filterByFormula: formula, pageSize: '100' });
+    for (const r of data.records ?? []) {
+      const name = r.fields['Name'] ?? '';
+      if (name) places.push({ name, slug: slugifyPlace(name) });
+    }
+    places.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return { people, places };
 }
 
 export interface AirtablePlace {

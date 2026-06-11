@@ -739,3 +739,45 @@ a:hover { text-decoration: underline; }
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+
+/* Image-page chips: places link to place pages; people show identification
+   state (dashed = unverified, per the design language). */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 15px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+.chip-place {
+  background: var(--accent-soft);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.chip-place:hover { text-decoration: none; border-color: var(--accent); color: var(--ink); }
+.chip-person { background: var(--surface); }
+.chip-unverified { border-style: dashed; }
+.chip-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1px solid var(--border-strong);
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -5px;
+}

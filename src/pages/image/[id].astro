@@ -1,12 +1,14 @@
 ---
 import '../../styles/global.css';
-import { fetchImageByNumber } from '../../lib/airtable';
-import type { AirtableImage } from '../../lib/airtable';
+import { fetchImageByNumber, fetchImageChips } from '../../lib/airtable';
+import type { AirtableImage, PersonChip, PlaceChip } from '../../lib/airtable';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
 
 let image: AirtableImage | null = null;
+let people: PersonChip[] = [];
+let places: PlaceChip[] = [];
 let error: string | null = null;
 
 if (!imageId) {
@@ -16,10 +18,16 @@ if (!imageId) {
     // The Living Archive surface deliberately shows nothing of the print
     // inventory — the commercial side links here, never the reverse.
     image = await fetchImageByNumber(imageId);
+    if (image && (image.identificationIds.length || image.placeIds.length)) {
+      ({ people, places } = await fetchImageChips(image.identificationIds, image.placeIds));
+    }
   } catch (e) {
     error = e instanceof Error ? e.message : 'Unknown error.';
   }
 }
+
+const monogram = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
 const pageTitle = image
   ? `Image ${image.imageNumber} — Living Archive`
@@ -102,6 +110,20 @@ const watermarkLine = photographerFullName
 
           {image.caption && (
             <p class="caption">{image.caption}</p>
+          )}
+
+          {(people.length > 0 || places.length > 0) && (
+            <div class="chips">
+              {places.map((p) => (
+                <a class="chip chip-place" href={`/place/${p.slug}`}>{p.name}</a>
+              ))}
+              {people.map((p) => (
+                <span class={`chip chip-person${p.verified ? '' : ' chip-unverified'}`}>
+                  <span class="chip-avatar">{monogram(p.name)}</span>
+                  {p.name}
+                </span>
+              ))}
+            </div>
           )}
 
           <div class="subtitle">
