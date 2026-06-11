@@ -104,18 +104,24 @@ export async function createIdentification(
   });
 }
 
-/** Free-text contribution -> a Pending Suggestions record. */
-export async function createNoteSuggestion(
+/**
+ * A field-level contribution -> a Pending Suggestions record.
+ * fieldName must be one of the Suggestions table's "Field name" options
+ * (State, County, City / Town, Neighborhood, Specific venue, Date taken,
+ * Events, Organizations, Editorial notes, …).
+ */
+export async function createFieldSuggestion(
   imageRecId: string,
-  note: string,
+  fieldName: string,
+  proposedValue: string,
   userRecId: string,
   dateISO: string
 ): Promise<void> {
   await airtableWrite(`/${SUGGESTIONS_TABLE}`, 'POST', {
     fields: {
       Image: [imageRecId],
-      'Field name': 'Editorial notes',
-      'Proposed value': note,
+      'Field name': fieldName,
+      'Proposed value': proposedValue,
       Submitter: [userRecId],
       'Submitted on': dateISO,
       Status: 'Pending',

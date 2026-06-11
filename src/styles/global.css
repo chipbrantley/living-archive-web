@@ -603,3 +603,81 @@ a:hover { text-decoration: underline; }
   color: #6b4a0c;
   max-width: 560px;
 }
+
+/* Contribution card — "Add specific details" expander */
+.contrib-toggle {
+  display: inline-block;
+  margin-top: 12px;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #6b4a0c;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.contrib-toggle:hover { text-decoration: underline; }
+.contrib-details {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px dashed var(--cream-border);
+  padding-top: 14px;
+}
+.detail-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.detail-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b4a0c;
+  padding-top: 9px;
+}
+.detail-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.detail-grid-3 { grid-template-columns: 1fr 1fr 1.4fr; }
+.detail-fields input[type='text'],
+.detail-fields input[type='date'] {
+  background: var(--surface);
+  border: 1px solid var(--cream-border);
+  border-radius: 10px;
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.detail-date {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+.detail-date input[type='date'] { flex: 1; max-width: 220px; }
+.detail-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.detail-chips input { min-width: 180px; }
+@media (max-width: 640px) {
+  .detail-row { grid-template-columns: 1fr; gap: 4px; }
+  .detail-label { padding-top: 0; }
+  .detail-grid, .detail-grid-3 { grid-template-columns: 1fr; }
+}

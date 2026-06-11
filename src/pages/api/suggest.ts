@@ -19,7 +19,7 @@ import { fetchImageByNumber } from '../../lib/airtable';
 import {
   findOrCreateUser,
   createIdentification,
-  createNoteSuggestion,
+  createFieldSuggestion,
   type PersonSubmission,
 } from '../../lib/airtableWrite';
 
@@ -46,8 +46,6 @@ export const POST: APIRoute = async ({ request }) => {
 
   const imageNumber = String(body.imageNumber ?? '').trim();
   const note = String(body.note ?? '').trim().slice(0, 5000);
-  const submitterName = String(body.name ?? '').trim().slice(0, 200);
-  const submitterEmail = String(body.email ?? '').trim().slice(0, 200);
   const peopleRaw = Array.isArray(body.people) ? body.people.slice(0, 10) : [];
   const people: PersonSubmission[] = peopleRaw
     .map((p: any) => ({
@@ -59,10 +57,30 @@ export const POST: APIRoute = async ({ request }) => {
     }))
     .filter((p: PersonSubmission) => p.name !== '');
 
+  // Structured details -> (fieldName, value) pairs matching the Suggestions
+  // table's "Field name" select options.
+  const d = body.details ?? {};
+  const clean = (v: unknown) => String(v ?? '').trim().slice(0, 500);
+  const list = (v: unknown) =>
+    Array.isArray(v) ? v.map(clean).filter(Boolean).slice(0, 10) : [];
+  const dateValue = clean(d.date)
+    ? clean(d.date) + (d.approximate ? ' (approximate)' : '')
+    : '';
+  const fieldSuggestions: Array<[string, string]> = [
+    ['State', clean(d.state)],
+    ['County', clean(d.county)],
+    ['City / Town', clean(d.city)],
+    ['Neighborhood', clean(d.neighborhood)],
+    ['Specific venue', clean(d.venue)],
+    ['Date taken', dateValue],
+    ['Events', list(d.events).join('; ')],
+    ['Organizations', list(d.orgs).join('; ')],
+  ].filter(([, v]) => v !== '') as Array<[string, string]>;
+
   if (!/^\d{7}$/.test(imageNumber)) {
     return ok({ error: 'Unknown image.' }, 400);
   }
-  if (people.length === 0 && note === '') {
+  if (people.length === 0 && note === '' && fieldSuggestions.length === 0) {
     return ok({ error: 'Nothing to submit.' }, 400);
   }
 
@@ -70,16 +88,25 @@ export const POST: APIRoute = async ({ request }) => {
     const image = await fetchImageByNumber(imageNumber);
     if (!image) return ok({ error: 'Unknown image.' }, 404);
 
-    const userRecId = await findOrCreateUser(submitterName, submitterEmail);
+    // No auth yet: contributions are anonymous until the credential layer
+    // lands; the submitter link goes to a shared anonymous Users record.
+    const userRecId = await findOrCreateUser('', '');
     const today = new Date().toISOString().slice(0, 10);
 
     for (const person of people) {
       await createIdentification(image.id, person, userRecId, today);
     }
     if (note) {
-      await createNoteSuggestion(image.id, note, userRecId, today);
+      await createFieldSuggestion(image.id, 'Editorial notes', note, userRecId, today);
     }
-    return ok({ ok: true, identifications: people.length, note: note !== '' });
+    for (const [fieldName, value] of fieldSuggestions) {
+      await createFieldSuggestion(image.id, fieldName, value, userRecId, today);
+    }
+    return ok({
+      ok: true,
+      identifications: people.length,
+      suggestions: fieldSuggestions.length + (note ? 1 : 0),
+    });
   } catch (e) {
     console.error('suggest endpoint:', e);
     return ok({ error: 'Something went wrong saving your contribution.' }, 500);

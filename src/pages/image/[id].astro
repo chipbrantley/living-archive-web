@@ -159,13 +159,49 @@ const watermarkLine = photographerFullName
               rows="3"
               placeholder="What else can you tell us? Anything you recognize, where you think it was taken, context that helps…"
             ></textarea>
-            <div class="contrib-meta-row">
-              <input id="contrib-name" type="text" placeholder="Your name (optional)" />
-              <input
-                id="contrib-email"
-                type="email"
-                placeholder="Email (optional — if you're open to follow-up)"
-              />
+            <button type="button" class="contrib-toggle" id="contrib-toggle" aria-expanded="false">
+              + Add specific details (location, date, events, organizations)
+            </button>
+            <div class="contrib-details" id="contrib-details" hidden>
+              <div class="detail-row">
+                <span class="detail-label">Location</span>
+                <div class="detail-fields">
+                  <div class="detail-grid">
+                    <input id="det-state" type="text" placeholder="State" />
+                    <input id="det-county" type="text" placeholder="County" />
+                  </div>
+                  <div class="detail-grid detail-grid-3">
+                    <input id="det-city" type="text" placeholder="City or town" />
+                    <input id="det-neighborhood" type="text" placeholder="Neighborhood" />
+                    <input id="det-venue" type="text" placeholder="Location name — church, school, office…" />
+                  </div>
+                </div>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Date taken</span>
+                <div class="detail-fields detail-date">
+                  <input id="det-date" type="date" />
+                  <label class="detail-checkbox">
+                    <input id="det-approx" type="checkbox" /> Approximate
+                  </label>
+                </div>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Event or activity</span>
+                <div class="detail-fields">
+                  <div class="contrib-people detail-chips" id="events-box">
+                    <input id="event-input" type="text" placeholder="e.g. Selma–Montgomery march — press Enter to add" />
+                  </div>
+                </div>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Organizations</span>
+                <div class="detail-fields">
+                  <div class="contrib-people detail-chips" id="orgs-box">
+                    <input id="org-input" type="text" placeholder="e.g. SNCC, COFO — press Enter to add" />
+                  </div>
+                </div>
+              </div>
             </div>
             <input
               id="contrib-website"
@@ -310,10 +346,84 @@ const watermarkLine = photographerFullName
           if (!suggest.contains(e.target) && e.target !== input) hideSuggest();
         });
 
+        // --- Specific details: toggle + free-entry chip inputs ---
+        const toggle = document.getElementById('contrib-toggle');
+        const details = document.getElementById('contrib-details');
+        toggle.addEventListener('click', () => {
+          const open = details.hidden;
+          details.hidden = !open;
+          toggle.setAttribute('aria-expanded', String(open));
+          toggle.textContent = open
+            ? '− Hide details'
+            : '+ Add specific details (location, date, events, organizations)';
+        });
+
+        function chipInput(boxId, inputId) {
+          const cBox = document.getElementById(boxId);
+          const cInput = document.getElementById(inputId);
+          const values = [];
+          function render() {
+            cBox.querySelectorAll('.pending-chip').forEach((c) => c.remove());
+            values.forEach((v, i) => {
+              const chip = document.createElement('span');
+              chip.className = 'pending-chip';
+              chip.textContent = v;
+              const x = document.createElement('button');
+              x.type = 'button';
+              x.className = 'pc-x';
+              x.setAttribute('aria-label', 'remove ' + v);
+              x.textContent = '×';
+              x.addEventListener('click', () => {
+                values.splice(i, 1);
+                render();
+              });
+              chip.appendChild(x);
+              cBox.insertBefore(chip, cInput);
+            });
+          }
+          function commit() {
+            const v = cInput.value.trim();
+            if (v && !values.includes(v)) {
+              values.push(v);
+              render();
+            }
+            cInput.value = '';
+          }
+          cInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+              e.preventDefault();
+              commit();
+            } else if (e.key === 'Backspace' && cInput.value === '' && values.length) {
+              values.pop();
+              render();
+            }
+          });
+          cInput.addEventListener('blur', commit);
+          return values;
+        }
+        const eventChips = chipInput('events-box', 'event-input');
+        const orgChips = chipInput('orgs-box', 'org-input');
+
+        const detVal = (id) => document.getElementById(id).value.trim();
+
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
           const note = noteEl.value.trim();
-          if (chips.length === 0 && note === '') {
+          const detailsPayload = {
+            state: detVal('det-state'),
+            county: detVal('det-county'),
+            city: detVal('det-city'),
+            neighborhood: detVal('det-neighborhood'),
+            venue: detVal('det-venue'),
+            date: detVal('det-date'),
+            approximate: document.getElementById('det-approx').checked,
+            events: eventChips,
+            orgs: orgChips,
+          };
+          const hasDetails = Object.values(detailsPayload).some(
+            (v) => (Array.isArray(v) ? v.length : v !== '' && v !== false)
+          );
+          if (chips.length === 0 && note === '' && !hasDetails) {
             hint.textContent = 'Name someone or tell us something first.';
             return;
           }
@@ -328,8 +438,7 @@ const watermarkLine = photographerFullName
                 imageNumber,
                 people: chips,
                 note,
-                name: document.getElementById('contrib-name').value,
-                email: document.getElementById('contrib-email').value,
+                details: detailsPayload,
                 website: document.getElementById('contrib-website').value,
               }),
             });
