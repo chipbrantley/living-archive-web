@@ -4,15 +4,17 @@ import {
   fetchEventBySlug,
   fetchImagesByIds,
   fetchPeopleNamesByIds,
+  fetchOrgChipsByIds,
   prettyDate,
 } from '../../lib/airtable';
-import type { AirtableEvent, AirtableImage } from '../../lib/airtable';
+import type { AirtableEvent, AirtableImage, OrgChip } from '../../lib/airtable';
 
 const { slug } = Astro.params;
 
 let event: AirtableEvent | null = null;
 let images: AirtableImage[] = [];
 let keyPeople: { name: string; slug: string }[] = [];
+let orgChips: OrgChip[] = [];
 let error: string | null = null;
 
 try {
@@ -22,6 +24,7 @@ try {
       images = (await fetchImagesByIds(event.imageIds)).filter((i) => i.imageFile);
     }
     keyPeople = await fetchPeopleNamesByIds(event.keyPeopleIds);
+    orgChips = await fetchOrgChipsByIds(event.orgIds);
   }
 } catch (e) {
   error = e instanceof Error ? e.message : 'Unknown error.';
@@ -93,6 +96,15 @@ const monogram = (name: string) =>
           <section class="intro">
             <h1 class="intro-title">{event.name}</h1>
             {metaLine && <div class="place-line">{metaLine}</div>}
+            {orgChips.length > 0 && (
+              <div class="chips" style="margin-bottom:14px">
+                {orgChips.map((o) => (
+                  <span class="chip chip-org" title={o.acronym ? o.name : undefined}>
+                    {o.acronym || o.name}
+                  </span>
+                ))}
+              </div>
+            )}
             {event.bio && <p class="intro-text">{event.bio}</p>}
             {event.bio && event.bioSource && (
               <div class="bio-source">Source: {event.bioSource}</div>

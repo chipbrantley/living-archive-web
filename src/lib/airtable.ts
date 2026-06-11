@@ -418,6 +418,7 @@ export interface AirtableEvent {
   backgroundLinks: string[];
   keyPeopleIds: string[];
   imageIds: string[];
+  orgIds: string[];
 }
 
 export async function fetchEventBySlug(slug: string): Promise<AirtableEvent | null> {
@@ -447,7 +448,21 @@ export async function fetchEventBySlug(slug: string): Promise<AirtableEvent | nu
     backgroundLinks: lines(f['Background / context links']),
     keyPeopleIds: f['Key people'] ?? [],
     imageIds: f['Images'] ?? [],
+    orgIds: f['Organizations'] ?? [],
   };
+}
+
+/** Org chips for a set of Organizations record ids. */
+export async function fetchOrgChipsByIds(ids: string[]): Promise<OrgChip[]> {
+  if (ids.length === 0) return [];
+  const formula = `OR(${ids.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+  const data = await airtable('/Organizations', { filterByFormula: formula, pageSize: '100' });
+  const chips: OrgChip[] = [];
+  for (const r of data.records ?? []) {
+    const name = r.fields['Name'] ?? '';
+    if (name) chips.push({ name, acronym: r.fields['Acronym'] ?? null });
+  }
+  return chips;
 }
 
 /** Names + slugs for a set of People record ids (key-people rows, etc.). */
