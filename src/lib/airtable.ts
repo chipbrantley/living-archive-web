@@ -165,29 +165,93 @@ export async function fetchImagesWithFiles(): Promise<AirtableImage[]> {
     records.push(...(data.records ?? []));
     offset = data.offset;
   } while (offset);
-  return records.map((r: any) => {
-    const attachments = (r.fields['Image file'] ?? []) as any[];
-    const firstAttachment = attachments[0];
-    const large = firstAttachment?.thumbnails?.large;
-    const imageFile: AirtableImageFile | null = firstAttachment
-      ? {
-          url: firstAttachment.url,
-          width: firstAttachment.width,
-          height: firstAttachment.height,
-          filename: firstAttachment.filename,
-          displayUrl: large?.url ?? firstAttachment.url,
-          displayWidth: large?.width ?? firstAttachment.width,
-          displayHeight: large?.height ?? firstAttachment.height,
-        }
-      : null;
-    return {
-      id: r.id,
-      imageNumber: r.fields['Image number'] ?? '',
-      photographerName: (r.fields['Photographer prefix'] ?? [])[0] ?? null,
-      printIds: r.fields['Prints'] ?? [],
-      title: r.fields['Title'] ?? null,
-      caption: r.fields['Caption'] ?? null,
-      imageFile,
-    } as AirtableImage;
-  });
+  return records.map(mapImageRecord);
+}
+
+function mapImageRecord(r: any): AirtableImage {
+  const attachments = (r.fields['Image file'] ?? []) as any[];
+  const firstAttachment = attachments[0];
+  const large = firstAttachment?.thumbnails?.large;
+  const imageFile: AirtableImageFile | null = firstAttachment
+    ? {
+        url: firstAttachment.url,
+        width: firstAttachment.width,
+        height: firstAttachment.height,
+        filename: firstAttachment.filename,
+        displayUrl: large?.url ?? firstAttachment.url,
+        displayWidth: large?.width ?? firstAttachment.width,
+        displayHeight: large?.height ?? firstAttachment.height,
+      }
+    : null;
+  return {
+    id: r.id,
+    imageNumber: r.fields['Image number'] ?? '',
+    photographerName: (r.fields['Photographer prefix'] ?? [])[0] ?? null,
+    printIds: r.fields['Prints'] ?? [],
+    title: r.fields['Title'] ?? null,
+    caption: r.fields['Caption'] ?? null,
+    imageFile,
+  };
+}
+
+export interface AirtablePlace {
+  id: string;
+  name: string;
+  type: string | null;
+  state: string | null;
+  county: string | null;
+  notes: string | null;
+  imageIds: string[];
+}
+
+export const slugifyPlace = (name: string): string =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/**
+ * Find a Place by its URL slug. Fetches the (small) Places table and matches
+ * on the slugified name; imageIds comes from the auto-created reverse link.
+ */
+export async function fetchPlaceBySlug(slug: string): Promise<AirtablePlace | null> {
+  const records: any[] = [];
+  let offset: string | undefined;
+  do {
+    const params: Record<string, string> = { pageSize: '100' };
+    if (offset) params.offset = offset;
+    const data = await airtable('/Places', params);
+    records.push(...(data.records ?? []));
+    offset = data.offset;
+  } while (offset);
+  const r = records.find((rec) => slugifyPlace(rec.fields['Name'] ?? '') === slug);
+  if (!r) return null;
+  return {
+    id: r.id,
+    name: r.fields['Name'] ?? '',
+    type: r.fields['Type'] ?? null,
+    state: r.fields['State'] ?? null,
+    county: r.fields['County'] ?? null,
+    notes: r.fields['Notes'] ?? null,
+    imageIds: r.fields['Images'] ?? [],
+  };
+}
+
+/** Fetch Image records by record id, in chunks (formula length limits). */
+export async function fetchImagesByIds(ids: string[]): Promise<AirtableImage[]> {
+  const images: AirtableImage[] = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    const formula = `OR(${chunk.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    let offset: string | undefined;
+    do {
+      const params: Record<string, string> = {
+        filterByFormula: formula,
+        pageSize: '100',
+      };
+      if (offset) params.offset = offset;
+      const data = await airtable('/Images', params);
+      images.push(...(data.records ?? []).map(mapImageRecord));
+      offset = data.offset;
+    } while (offset);
+  }
+  images.sort((a, b) => a.imageNumber.localeCompare(b.imageNumber));
+  return images;
 }

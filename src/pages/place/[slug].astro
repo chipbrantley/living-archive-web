@@ -1,0 +1,130 @@
+---
+import '../../styles/global.css';
+import { fetchPlaceBySlug, fetchImagesByIds } from '../../lib/airtable';
+import type { AirtablePlace, AirtableImage } from '../../lib/airtable';
+
+const { slug } = Astro.params;
+
+let place: AirtablePlace | null = null;
+let images: AirtableImage[] = [];
+let error: string | null = null;
+
+try {
+  place = await fetchPlaceBySlug(slug ?? '');
+  if (place && place.imageIds.length > 0) {
+    images = (await fetchImagesByIds(place.imageIds)).filter((i) => i.imageFile);
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Unknown error.';
+}
+
+const pageTitle = place ? `${place.name} — Living Archive` : 'Place not found — Living Archive';
+const placeLine = place
+  ? [place.type !== 'City / Town' ? place.type : null,
+     place.county ? `${place.county} County`.replace('Parish County', 'Parish') : null,
+     place.state]
+      .filter(Boolean)
+      .join(' · ')
+  : '';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">Living Archive</span>
+          <span class="brand-sub">A Proximity Partners project</span>
+        </a>
+      </div>
+    </header>
+
+    <nav class="breadcrumb">
+      <a href="/">Browse</a>
+      <span class="sep">›</span>
+      <span>{place ? place.name : 'Place'}</span>
+    </nav>
+
+    <div class="page">
+      {error && (
+        <div class="card">
+          <div class="error-card">
+            <strong>Something went wrong.</strong>
+            <pre>{error}</pre>
+          </div>
+        </div>
+      )}
+
+      {!error && !place && (
+        <div class="card">
+          <h1 class="title">Place not found</h1>
+          <p>
+            We don't have a place by that name yet.
+            <a href="/">Back to browse</a>
+          </p>
+        </div>
+      )}
+
+      {place && (
+        <>
+          <section class="intro place-intro">
+            <h1 class="intro-title">{place.name}</h1>
+            {placeLine && <div class="place-line">{placeLine}</div>}
+            {place.notes && <p class="intro-text">{place.notes}</p>}
+          </section>
+
+          {images.length === 0 && (
+            <div class="card">
+              <p>
+                No images are linked to {place.name} yet. As photographs are
+                identified with this place — including through contributions on
+                image pages — they'll gather here.
+              </p>
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <section>
+              <div class="browse-header">
+                <h2 class="browse-title">Photographs from {place.name}</h2>
+                <span class="browse-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+              </div>
+              <div class="grid">
+                {images.map((img) => (
+                  <a class="tile" href={`/image/${img.imageNumber}`}>
+                    <div class="tile-image-wrap">
+                      <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                      <span class="image-watermark image-watermark--tile">
+                        {(() => {
+                          const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
+                          return photog ? `© ${photog} / Living Archive` : 'Living Archive';
+                        })()}
+                      </span>
+                    </div>
+                    <div class="tile-body">
+                      {img.title && <h3 class="tile-title">{img.title}</h3>}
+                      {img.caption ? (
+                        <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
+                      ) : (
+                        <p class="tile-caption tile-caption-empty">Image #{img.imageNumber} — not yet contextualized. Do you know this photograph?</p>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">Living Archive</div>
+    </footer>
+  </body>
+</html>
