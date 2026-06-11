@@ -618,6 +618,9 @@ a:hover { text-decoration: underline; }
   padding: 2px 0;
 }
 .contrib-toggle:hover { text-decoration: underline; }
+/* The hidden attribute's display:none loses to our display:flex unless
+   we restate it at higher specificity. */
+.contrib-details[hidden] { display: none; }
 .contrib-details {
   margin-top: 12px;
   display: flex;
