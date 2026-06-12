@@ -43,6 +43,17 @@ if (!imageId) {
 const monogram = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
+// Per-image source credit. Stanford's wording is their official citation, verbatim.
+const SCAN_CREDITS: Record<string, string> = {
+  'Stanford Special Collections':
+    'Matt Herron photography archive (M2866). Dept. of Special Collections and University Archives, Stanford University (Matt and Jeannine Herron).',
+  'Take Stock':
+    'Take Stock, the photography archive Matt Herron helped establish, maintained by Woody Packard.',
+  'Estate of Matt Herron': 'The Estate of Matt Herron (Jeannine Herron).',
+  'Proximity Partners': 'Proximity Partners print documentation.',
+};
+const scanCredit = image?.scanSource ? SCAN_CREDITS[image.scanSource] ?? null : null;
+
 const pageTitle = image
   ? `Image ${image.imageNumber} — Living Archive`
   : `Image not found — Living Archive`;
@@ -185,6 +196,10 @@ const watermarkLine = photographerFullName
             {image.dateTaken && <span class="date-taken">{prettyDate(image.dateTaken)}</span>}
             <span class="id-mono">Archive ID: {image.imageNumber}</span>
           </div>
+
+          {scanCredit && (
+            <div class="scan-credit">Source scan: {scanCredit}</div>
+          )}
 
         </div>
       )}

@@ -66,6 +66,7 @@ export interface AirtableImage {
   orgIds: string[];
   dateTaken: string | null;
   displayCaption: string | null;
+  scanSource: string | null;
 }
 
 export interface AirtablePrint {
@@ -178,6 +179,7 @@ function mapImageRecord(r: any): AirtableImage {
     orgIds: r.fields['Organizations'] ?? [],
     dateTaken: r.fields['Date taken'] ?? null,
     displayCaption: r.fields['Display caption'] ?? null,
+    scanSource: r.fields['Scan source'] ?? null,
   };
 }
 
