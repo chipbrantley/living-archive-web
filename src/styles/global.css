@@ -876,3 +876,40 @@ a.chip-person:hover { text-decoration: none; border-color: var(--accent); }
   border-color: var(--border-strong);
   text-decoration: none;
 }
+
+/* ----------------------------------------------------------------------
+   Two-register chip system (supersedes per-type colors above).
+   ASSERT — facts direct to the image (people, location, event, orgs):
+   one filled treatment. GESTURE — contextual/background tags: one
+   outline treatment. Person chips keep the monogram avatar as their
+   type marker; dashed border still means "awaiting review". */
+.chip-person,
+.chip-place,
+.chip-event,
+.chip-org {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: var(--border-strong);
+  font-weight: 500;
+}
+a.chip-person:hover,
+a.chip-place:hover,
+a.chip-event:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+.chip-person .chip-avatar {
+  background: var(--surface);
+}
+.chip-place-context {
+  background: var(--surface);
+  color: var(--ink-faint);
+  border-style: solid;
+  border-color: var(--border);
+  font-weight: 400;
+}
+.chip-place-context:hover {
+  color: var(--ink-soft);
+  border-color: var(--border-strong);
+  text-decoration: none;
+}
