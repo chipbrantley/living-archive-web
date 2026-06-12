@@ -920,6 +920,5 @@ a.chip-event:hover {
   font-style: italic;
   color: var(--ink-faint);
   margin: -12px 0 20px;
-  max-width: 800px;
   line-height: 1.5;
 }
