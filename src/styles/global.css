@@ -862,3 +862,17 @@ a.chip-person:hover { text-decoration: none; border-color: var(--accent); }
   color: var(--ink-soft);
   line-height: 1.5;
 }
+
+/* Contextual place tags — connected through a person, not where the photo
+   was made. Outline register, distinct from the filled taken-here chips. */
+.chip-place-context {
+  background: var(--surface);
+  color: var(--ink-faint);
+  border-style: solid;
+  border-color: var(--border);
+}
+.chip-place-context:hover {
+  color: var(--ink-soft);
+  border-color: var(--border-strong);
+  text-decoration: none;
+}

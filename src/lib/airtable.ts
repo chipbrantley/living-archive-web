@@ -225,7 +225,14 @@ export async function fetchImageChips(
   suggestionIds: string[] = [],
   eventIds: string[] = [],
   orgIds: string[] = []
-): Promise<{ people: PersonChip[]; places: PlaceChip[]; events: EventChip[]; orgs: OrgChip[]; log: LogEntry[] }> {
+): Promise<{
+  people: PersonChip[];
+  places: PlaceChip[];        // taken-here — a map could trust these
+  contextPlaces: PlaceChip[]; // connected through a person — context, not location
+  events: EventChip[];
+  orgs: OrgChip[];
+  log: LogEntry[];
+}> {
   const people: PersonChip[] = [];
   const contextPlaces: PlaceChip[] = [];
   const events: EventChip[] = [];
@@ -308,10 +315,6 @@ export async function fetchImageChips(
     }
     places.sort((a, b) => a.name.localeCompare(b.name));
   }
-  // Contextual place tags follow the taken-here places, skipping duplicates.
-  for (const c of contextPlaces) {
-    if (!places.some((p) => p.name === c.name)) places.push(c);
-  }
   if (suggestionIds.length > 0) {
     const formula = `OR(${suggestionIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
     const data = await airtable('/Suggestions', { filterByFormula: formula, pageSize: '100' });
@@ -325,7 +328,14 @@ export async function fetchImageChips(
     }
   }
   log.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
-  return { people, places, events, orgs, log };
+  // Canonical chip order is rendered by the page; alphabetize within groups here.
+  people.sort((a, b) => a.name.localeCompare(b.name));
+  events.sort((a, b) => a.name.localeCompare(b.name));
+  orgs.sort((a, b) => (a.acronym || a.name).localeCompare(b.acronym || b.name));
+  const dedupedContext = contextPlaces
+    .filter((c) => !places.some((p) => p.name === c.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return { people, places, contextPlaces: dedupedContext, events, orgs, log };
 }
 
 export { prettyDate };

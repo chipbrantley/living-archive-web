@@ -9,6 +9,7 @@ const imageId = id ?? '';
 let image: AirtableImage | null = null;
 let people: PersonChip[] = [];
 let places: PlaceChip[] = [];
+let contextPlaces: PlaceChip[] = [];
 let events: EventChip[] = [];
 let orgs: OrgChip[] = [];
 let log: LogEntry[] = [];
@@ -26,7 +27,7 @@ if (!imageId) {
       (image.identificationIds.length || image.placeIds.length ||
         image.suggestionIds.length || image.eventIds.length || image.orgIds.length)
     ) {
-      ({ people, places, events, orgs, log } = await fetchImageChips(
+      ({ people, places, contextPlaces, events, orgs, log } = await fetchImageChips(
         image.identificationIds,
         image.placeIds,
         image.suggestionIds,
@@ -139,18 +140,9 @@ const watermarkLine = photographerFullName
             </>
           ) : null}
 
-          {(people.length > 0 || places.length > 0 || events.length > 0 || orgs.length > 0) && (
+          {/* Canonical chip order: people · location · event · organizations · contextual */}
+          {(people.length > 0 || places.length > 0 || contextPlaces.length > 0 || events.length > 0 || orgs.length > 0) && (
             <div class="chips">
-              {events.map((ev) => (
-                <a class="chip chip-event" href={`/event/${ev.slug}`}>{ev.name}</a>
-              ))}
-              {places.map((p) => (
-                <a
-                  class="chip chip-place"
-                  href={`/place/${p.slug}`}
-                  title={p.via ? `Connected through ${p.via}` : `Photographed in ${p.name}`}
-                >{p.name}</a>
-              ))}
               {people.map((p) => (
                 <a
                   class={`chip chip-person${p.verified ? '' : ' chip-unverified'}`}
@@ -161,10 +153,27 @@ const watermarkLine = photographerFullName
                   {p.name}
                 </a>
               ))}
+              {places.map((p) => (
+                <a
+                  class="chip chip-place"
+                  href={`/place/${p.slug}`}
+                  title={`Photographed in ${p.name}`}
+                >{p.name}</a>
+              ))}
+              {events.map((ev) => (
+                <a class="chip chip-event" href={`/event/${ev.slug}`}>{ev.name}</a>
+              ))}
               {orgs.map((o) => (
                 <span class="chip chip-org" title={o.acronym ? o.name : undefined}>
                   {o.acronym || o.name}
                 </span>
+              ))}
+              {contextPlaces.map((p) => (
+                <a
+                  class="chip chip-place chip-place-context"
+                  href={`/place/${p.slug}`}
+                  title={p.via ? `Connected through ${p.via}` : `Connected to ${p.name}`}
+                >{p.name}</a>
               ))}
             </div>
           )}
