@@ -3,7 +3,21 @@ import '../styles/global.css';
 import { fetchImagesWithFiles, pingAirtable } from '../lib/airtable';
 
 const error = await pingAirtable();
-const images = error ? [] : await fetchImagesWithFiles();
+const allImages = error ? [] : await fetchImagesWithFiles();
+
+// The browse front door is curated, not catalog-ordered: Featured images
+// lead (shuffled each load so it feels alive), then the rest by image number.
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const featured = shuffle(allImages.filter((img) => img.featured));
+const rest = allImages.filter((img) => !img.featured);
+const images = [...featured, ...rest];
 ---
 
 <html lang="en">

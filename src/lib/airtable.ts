@@ -59,6 +59,7 @@ export interface AirtableImage {
   title: string | null;
   caption: string | null;
   imageFile: AirtableImageFile | null;
+  featured: boolean;
   identificationIds: string[];
   placeIds: string[];
   suggestionIds: string[];
@@ -172,6 +173,7 @@ function mapImageRecord(r: any): AirtableImage {
     title: r.fields['Title'] ?? null,
     caption: r.fields['Caption'] ?? null,
     imageFile,
+    featured: r.fields['Featured'] === true,
     identificationIds: r.fields['Identifications'] ?? [],
     placeIds: r.fields['Places'] ?? [],
     suggestionIds: r.fields['Suggestions'] ?? [],
