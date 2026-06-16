@@ -55,13 +55,18 @@ const images = error ? [] : await fetchImagesWithFiles();
                 <h2 class="browse-title">Browse</h2>
                 <span class="browse-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
               </div>
-              <div class="grid">
-                {images.map((img) => (
-                  <a class="tile" href={`/image/${img.imageNumber}`}>
+              <div class="grid" id="browse-grid" data-page-size="48">
+                {images.map((img, i) => (
+                  <a class={`tile${i >= 48 ? ' tile-hidden' : ''}`} href={`/image/${img.imageNumber}`}>
                     <div class="tile-image-wrap">
                       {img.imageFile ? (
                         <>
-                          <img src={img.imageFile.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                          <img
+                            src={i < 48 ? img.imageFile.displayUrl : undefined}
+                            data-src={img.imageFile.displayUrl}
+                            alt={img.caption ?? `Image ${img.imageNumber}`}
+                            loading="lazy"
+                          />
                           <span class="image-watermark image-watermark--tile">
                             {(() => {
                               const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
@@ -90,6 +95,13 @@ const images = error ? [] : await fetchImagesWithFiles();
                   </a>
                 ))}
               </div>
+              {images.length > 48 && (
+                <div class="show-more-wrap">
+                  <button id="show-more" class="show-more">
+                    Show more <span class="show-more-count">(showing 48 of {images.length})</span>
+                  </button>
+                </div>
+              )}
             </section>
           )}
         </>
@@ -99,5 +111,32 @@ const images = error ? [] : await fetchImagesWithFiles();
     <footer class="footer">
       <div class="footer-brand">Living Archive</div>
     </footer>
+
+    <script is:inline>
+      (function () {
+        const grid = document.getElementById('browse-grid');
+        const btn = document.getElementById('show-more');
+        if (!grid || !btn) return;
+        const pageSize = parseInt(grid.dataset.pageSize, 10) || 48;
+        const tiles = Array.from(grid.querySelectorAll('.tile'));
+        const countEl = btn.querySelector('.show-more-count');
+        let shown = Math.min(pageSize, tiles.length);
+        btn.addEventListener('click', () => {
+          const next = Math.min(shown + pageSize, tiles.length);
+          for (let i = shown; i < next; i++) {
+            const tile = tiles[i];
+            const img = tile.querySelector('img[data-src]');
+            if (img && !img.src) img.src = img.dataset.src;
+            tile.classList.remove('tile-hidden');
+          }
+          shown = next;
+          if (shown >= tiles.length) {
+            btn.remove();
+          } else if (countEl) {
+            countEl.textContent = `(showing ${shown} of ${tiles.length})`;
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

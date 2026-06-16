@@ -93,14 +93,23 @@ def parse_filename(fname):
         return f"167{int(m.group(1)):02d}{int(m.group(2)):02d}", "stanford"
     if fname in VERIFIED_3595:
         return VERIFIED_3595[fname], "3595-verified"
+    # Stanford short form, job 167 implied (Ben confirmed 2026-06-12:
+    # s2_17 = 1670217). Box 6 folder 11 = the Selma negatives. Skip the
+    # _small display duplicates; A-frame rule applies as on the long form.
+    if re.search(r"_small\.jpe?g$", fname, re.I):
+        return None, "deferred: _small display duplicate"
+    m = re.match(
+        r"^m2866_b6_f11_s(\d{1,2})_(\d{1,2})a?(?:_positive)?\.jpe?g$",
+        fname, re.I,
+    )
+    if m:
+        return f"167{int(m.group(1)):02d}{int(m.group(2)):02d}", "stanford-short"
     if re.search(r"_accurate\.|_0001b_", fname):
         return None, "deferred: non-display variant (accurate/alt)"
     if re.match(r"^gb523ng2378_(0122|0128)_", fname):
-        return None, "deferred: sheet roll unconfirmed (Ben Q1)"
-    if re.match(r"^m2866_b6_f11_s\d{1,2}_", fname, re.I):
-        return None, "deferred: bare s-number unconfirmed (Ben Q2)"
+        return None, "deferred: orphan — Stanford has no negatives, no roll # (Ben Q1)"
     if re.match(r"^m2866_b54_", fname, re.I):
-        return None, "deferred: box 54 color slides unconfirmed (Ben Q3)"
+        return None, "deferred: box 54 color slides — Series 167 but slide-page IDs, not roll-frame (Ben Q3)"
     return None, "deferred: unrecognized pattern"
 
 

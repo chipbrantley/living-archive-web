@@ -922,3 +922,29 @@ a.chip-event:hover {
   margin: -12px 0 20px;
   line-height: 1.5;
 }
+
+/* Browse pagination — "Show more" reveals the next page of tiles */
+.tile-hidden { display: none; }
+.show-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+.show-more {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 22px;
+  padding: 11px 26px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.show-more:hover { border-color: var(--accent); background: var(--accent-soft); }
+.show-more-count {
+  font-weight: 400;
+  color: var(--ink-faint);
+  margin-left: 4px;
+}
