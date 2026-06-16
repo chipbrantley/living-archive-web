@@ -57,6 +57,20 @@ const images = [...featured, ...rest];
             </p>
           </section>
 
+          <div class="search-wrap">
+            <form class="search-bar" action="/search" method="get" role="search" autocomplete="off">
+              <input
+                id="site-search"
+                type="search"
+                name="q"
+                placeholder="Search a name, a town, an event…"
+                aria-label="Search the archive"
+              />
+              <button type="submit">Search</button>
+            </form>
+            <div class="search-drop" id="search-drop" role="listbox" hidden></div>
+          </div>
+
           {images.length === 0 && (
             <div class="card">
               <p>No images with files yet. As image files get added to the Airtable base, they'll appear here.</p>
@@ -128,6 +142,53 @@ const images = [...featured, ...rest];
 
     <script is:inline>
       (function () {
+        // Live search dropdown: entity jumps + a "see all photographs" link.
+        const input = document.getElementById('site-search');
+        const drop = document.getElementById('search-drop');
+        if (input && drop) {
+          const TYPE = { person: 'Person', place: 'Place', event: 'Event' };
+          const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+          const hide = () => { drop.hidden = true; drop.innerHTML = ''; };
+          let timer = null;
+          input.addEventListener('input', () => {
+            const q = input.value.trim();
+            clearTimeout(timer);
+            if (q.length < 2) { hide(); return; }
+            timer = setTimeout(async () => {
+              try {
+                const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+                const data = await res.json();
+                if (input.value.trim() !== q) return;
+                drop.innerHTML = '';
+                (data.entities || []).forEach((e) => {
+                  const a = document.createElement('a');
+                  a.className = 'search-item';
+                  a.href = e.url;
+                  a.innerHTML =
+                    (e.type === 'person' ? '<span class="chip-avatar"></span>' : '') +
+                    '<span class="search-name"></span><span class="search-type"></span>';
+                  if (e.type === 'person') a.querySelector('.chip-avatar').textContent = initials(e.name);
+                  a.querySelector('.search-name').textContent = e.name;
+                  a.querySelector('.search-type').textContent = TYPE[e.type] + (e.meta ? ' · ' + e.meta : '');
+                  drop.appendChild(a);
+                });
+                if (data.imageCount > 0) {
+                  const all = document.createElement('a');
+                  all.className = 'search-item search-all';
+                  all.href = '/search?q=' + encodeURIComponent(q);
+                  all.textContent = `See all ${data.imageCount} photograph${data.imageCount === 1 ? '' : 's'} matching “${q}” →`;
+                  drop.appendChild(all);
+                }
+                drop.hidden = drop.children.length === 0;
+              } catch (e) { hide(); }
+            }, 180);
+          });
+          input.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+          document.addEventListener('click', (e) => {
+            if (!drop.contains(e.target) && e.target !== input) hide();
+          });
+        }
+
         const grid = document.getElementById('browse-grid');
         const btn = document.getElementById('show-more');
         if (!grid || !btn) return;

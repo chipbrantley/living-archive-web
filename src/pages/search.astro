@@ -1,0 +1,154 @@
+---
+import '../styles/global.css';
+import { search, fetchImagesByIds } from '../lib/airtable';
+import type { SearchEntity, AirtableImage } from '../lib/airtable';
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+
+let entities: SearchEntity[] = [];
+let images: AirtableImage[] = [];
+let error: string | null = null;
+
+if (q.length >= 2) {
+  try {
+    const res = await search(q);
+    entities = res.entities;
+    if (res.imageIds.length > 0) {
+      images = (await fetchImagesByIds(res.imageIds)).filter((i) => i.imageFile);
+    }
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Unknown error.';
+  }
+}
+
+const typeLabel: Record<string, string> = { person: 'Person', place: 'Place', event: 'Event' };
+const monogram = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{q ? `Search: ${q}` : 'Search'} — Living Archive</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">Living Archive</span>
+          <span class="brand-sub">A Proximity Partners project</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="page">
+      <form class="search-bar search-bar-page" action="/search" method="get" role="search">
+        <input
+          type="search"
+          name="q"
+          value={q}
+          placeholder="Search people, places, events, photographs…"
+          aria-label="Search the archive"
+          autofocus
+        />
+        <button type="submit">Search</button>
+      </form>
+
+      {error && (
+        <div class="card"><div class="error-card"><strong>Something went wrong.</strong><pre>{error}</pre></div></div>
+      )}
+
+      {q.length >= 2 && !error && entities.length === 0 && images.length === 0 && (
+        <div class="card">
+          <p>Nothing found for <strong>{q}</strong>. Try a name, a town, or an event.</p>
+        </div>
+      )}
+
+      {entities.length > 0 && (
+        <section class="section">
+          <div class="section-title">Jump to</div>
+          <div class="jump-list">
+            {entities.map((e) => (
+              <a class="jump" href={e.url}>
+                {e.type === 'person' && <span class="chip-avatar">{monogram(e.name)}</span>}
+                <span class="jump-name">{e.name}</span>
+                <span class="jump-type">{typeLabel[e.type]}{e.meta ? ` · ${e.meta}` : ''}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {images.length > 0 && (
+        <section class="section">
+          <div class="browse-header">
+            <h2 class="browse-title">Photographs</h2>
+            <span class="browse-count">{images.length} {images.length === 1 ? 'match' : 'matches'} for “{q}”</span>
+          </div>
+          <div class="grid" id="browse-grid" data-page-size="48">
+            {images.map((img, i) => (
+              <a class={`tile${i >= 48 ? ' tile-hidden' : ''}`} href={`/image/${img.imageNumber}`}>
+                <div class="tile-image-wrap">
+                  <img
+                    src={i < 48 ? img.imageFile!.displayUrl : undefined}
+                    data-src={img.imageFile!.displayUrl}
+                    alt={img.caption ?? `Image ${img.imageNumber}`}
+                    loading="lazy"
+                  />
+                  <span class="image-watermark image-watermark--tile">
+                    {(() => {
+                      const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
+                      return photog ? `© ${photog} / Living Archive` : 'Living Archive';
+                    })()}
+                  </span>
+                </div>
+                <div class="tile-body">
+                  {img.title && <h3 class="tile-title">{img.title}</h3>}
+                  {img.caption && (
+                    <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
+                  )}
+                  <div class="tile-meta">
+                    <span class="tile-id">#{img.imageNumber}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+          {images.length > 48 && (
+            <div class="show-more-wrap">
+              <button id="show-more" class="show-more">
+                Show more <span class="show-more-count">(showing 48 of {images.length})</span>
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+
+    <footer class="footer"><div class="footer-brand">Living Archive</div></footer>
+
+    <script is:inline>
+      (function () {
+        const grid = document.getElementById('browse-grid');
+        const btn = document.getElementById('show-more');
+        if (!grid || !btn) return;
+        const pageSize = parseInt(grid.dataset.pageSize, 10) || 48;
+        const tiles = Array.from(grid.querySelectorAll('.tile'));
+        const countEl = btn.querySelector('.show-more-count');
+        let shown = Math.min(pageSize, tiles.length);
+        btn.addEventListener('click', () => {
+          const next = Math.min(shown + pageSize, tiles.length);
+          for (let i = shown; i < next; i++) {
+            const img = tiles[i].querySelector('img[data-src]');
+            if (img && !img.src) img.src = img.dataset.src;
+            tiles[i].classList.remove('tile-hidden');
+          }
+          shown = next;
+          if (shown >= tiles.length) btn.remove();
+          else if (countEl) countEl.textContent = `(showing ${shown} of ${tiles.length})`;
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -344,6 +344,120 @@ export async function fetchImageChips(
 
 export { prettyDate };
 
+// ----------------------------------------------------------------------
+// Entity-aware search. A module-cached index across the navigable graph
+// (people, places, events — each has a page) plus image text (number,
+// title, caption). Entities become jump-to results; images become a grid.
+
+export interface SearchEntity {
+  type: 'person' | 'place' | 'event';
+  name: string;
+  url: string;
+  meta: string;
+}
+export interface SearchResult {
+  entities: SearchEntity[];
+  imageIds: string[]; // ids of images whose text matches; fetch for display
+}
+
+interface SearchIndex {
+  people: { name: string; aliases: string; slug: string; meta: string }[];
+  places: { name: string; slug: string; meta: string }[];
+  events: { name: string; slug: string }[];
+  images: { id: string; number: string; text: string }[];
+}
+
+let searchIndexCache: { at: number; index: SearchIndex } | null = null;
+const SEARCH_TTL_MS = 2 * 60 * 1000;
+
+async function listAll(table: string, fields: string[]): Promise<any[]> {
+  const out: any[] = [];
+  let offset: string | undefined;
+  do {
+    const params: Record<string, string> = { pageSize: '100' };
+    fields.forEach((f, i) => (params[`fields[${i}]`] = f));
+    if (offset) params.offset = offset;
+    const data = await airtable(`/${table}`, params);
+    out.push(...(data.records ?? []));
+    offset = data.offset;
+  } while (offset);
+  return out;
+}
+
+async function getSearchIndex(): Promise<SearchIndex> {
+  if (searchIndexCache && Date.now() - searchIndexCache.at < SEARCH_TTL_MS) {
+    return searchIndexCache.index;
+  }
+  const [people, places, events, images] = await Promise.all([
+    listAll('People', ['Name', 'Aliases', 'Affiliation']),
+    listAll('Places', ['Name', 'Type', 'State', 'County']),
+    listAll('Events', ['Name', 'Start date']),
+    listAll('Images', ['Image number', 'Title', 'Caption', 'Display caption', 'Image file']),
+  ]);
+  const index: SearchIndex = {
+    people: people
+      .filter((r) => r.fields['Name'])
+      .map((r) => ({
+        name: r.fields['Name'],
+        aliases: (r.fields['Aliases'] ?? '').replace(/\n/g, ' '),
+        slug: slugifyPlace(r.fields['Name']),
+        meta: r.fields['Affiliation'] ?? '',
+      })),
+    places: places
+      .filter((r) => r.fields['Name'])
+      .map((r) => ({
+        name: r.fields['Name'],
+        slug: slugifyPlace(r.fields['Name']),
+        meta: [r.fields['County'], r.fields['State']].filter(Boolean).join(', '),
+      })),
+    events: events
+      .filter((r) => r.fields['Name'])
+      .map((r) => ({ name: r.fields['Name'], slug: slugifyPlace(r.fields['Name']) })),
+    images: images
+      .filter((r) => (r.fields['Image file'] ?? []).length > 0)
+      .map((r) => ({
+        id: r.id,
+        number: r.fields['Image number'] ?? '',
+        text: [r.fields['Image number'], r.fields['Title'], r.fields['Display caption'], r.fields['Caption']]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase(),
+      })),
+  };
+  searchIndexCache = { at: Date.now(), index };
+  return index;
+}
+
+export async function search(query: string): Promise<SearchResult> {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return { entities: [], imageIds: [] };
+  const idx = await getSearchIndex();
+  const entities: SearchEntity[] = [];
+  for (const p of idx.places) {
+    if (p.name.toLowerCase().includes(q)) {
+      entities.push({ type: 'place', name: p.name, url: `/place/${p.slug}`, meta: p.meta });
+    }
+  }
+  for (const e of idx.events) {
+    if (e.name.toLowerCase().includes(q)) {
+      entities.push({ type: 'event', name: e.name, url: `/event/${e.slug}`, meta: '' });
+    }
+  }
+  for (const p of idx.people) {
+    if (p.name.toLowerCase().includes(q) || p.aliases.toLowerCase().includes(q)) {
+      entities.push({ type: 'person', name: p.name, url: `/person/${p.slug}`, meta: p.meta });
+    }
+  }
+  // Exact-name matches first, then alphabetical; cap for the dropdown.
+  entities.sort((a, b) => {
+    const ax = a.name.toLowerCase() === q ? 0 : 1;
+    const bx = b.name.toLowerCase() === q ? 0 : 1;
+    return ax - bx || a.name.localeCompare(b.name);
+  });
+  const imageIds = idx.images.filter((im) => im.text.includes(q)).map((im) => im.id);
+  return { entities: entities.slice(0, 12), imageIds };
+}
+
 export interface AirtablePerson {
   id: string;
   name: string;

@@ -948,3 +948,75 @@ a.chip-event:hover {
   color: var(--ink-faint);
   margin-left: 4px;
 }
+
+/* ---------------------------------------------------------------------- */
+/* Search — entity-aware box, live dropdown, and results page            */
+.search-wrap { position: relative; max-width: 640px; margin: 0 0 32px; }
+.search-bar { display: flex; gap: 8px; }
+.search-bar input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 22px;
+  padding: 11px 18px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+}
+.search-bar input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.search-bar button {
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  border-radius: 22px;
+  padding: 0 22px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.search-bar button:hover { background: #000; }
+.search-bar-page { max-width: 640px; margin-bottom: 28px; }
+.search-drop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  z-index: 30;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(31, 29, 26, 0.10);
+  overflow: hidden;
+}
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.search-item:hover { background: var(--accent-soft); text-decoration: none; }
+.search-name { font-weight: 500; }
+.search-type { margin-left: auto; font-size: 12px; color: var(--ink-faint); }
+.search-all {
+  border-top: 1px solid var(--border);
+  color: var(--rust);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+/* Results-page jump list */
+.jump-list { display: flex; flex-direction: column; gap: 8px; }
+.jump {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.jump:hover { border-color: var(--accent); text-decoration: none; }
+.jump-name { font-weight: 600; }
+.jump-type { margin-left: auto; font-size: 12px; color: var(--ink-faint); }
