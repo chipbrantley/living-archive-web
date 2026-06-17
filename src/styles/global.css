@@ -1019,3 +1019,45 @@ a.chip-event:hover {
 .jump:hover { border-color: var(--accent); text-decoration: none; }
 .jump-name { font-weight: 600; }
 .jump-type { margin-left: auto; font-size: 12px; color: var(--ink-faint); }
+
+/* Sign-in page */
+.signin-card {
+  max-width: 440px;
+  margin: 48px auto 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 34px 32px;
+}
+.signin-title {
+  font-family: "Times New Roman", "Times", serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.signin-text { font-size: 15px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 18px; }
+.signin-hint { font-size: 13px; color: var(--ink-faint); margin-top: 14px; }
+.signin-error {
+  font-size: 13.5px; color: #7a2424;
+  background: #fbeded; border: 1px solid #e7b8b8;
+  border-radius: 8px; padding: 9px 12px; margin-bottom: 14px;
+}
+.signin-form { display: flex; flex-direction: column; gap: 10px; }
+.signin-form input {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font: inherit; font-size: 15px; color: var(--ink);
+}
+.signin-form input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.signin-submit {
+  background: var(--ink); color: #fff;
+  border: 0; border-radius: 10px;
+  padding: 11px 18px;
+  font: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer;
+}
+.signin-submit:hover { background: #000; }
+.signin-submit-secondary { background: var(--accent); }

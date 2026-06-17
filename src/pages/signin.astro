@@ -1,0 +1,73 @@
+---
+import '../styles/global.css';
+import { supabaseServer } from '../lib/supabase';
+
+// Is someone already signed in? (getUser revalidates against Supabase.)
+const supabase = supabaseServer(Astro);
+const { data: { user } } = await supabase.auth.getUser();
+
+const sent = Astro.url.searchParams.get('sent');
+const error = Astro.url.searchParams.get('error');
+const justSignedIn = Astro.url.searchParams.get('signedin') === '1';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Sign in — Living Archive</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/"><span class="brand-title">Living Archive</span></a>
+      </div>
+    </header>
+
+    <div class="page">
+      <section class="signin-card">
+        {user ? (
+          <>
+            <h1 class="signin-title">{justSignedIn ? "You're signed in." : 'Signed in'}</h1>
+            <p class="signin-text">
+              Signed in as <strong>{user.email}</strong>.
+            </p>
+            <form method="post" action="/api/auth/signout">
+              <button type="submit" class="signin-submit signin-submit-secondary">Sign out</button>
+            </form>
+          </>
+        ) : sent ? (
+          <>
+            <h1 class="signin-title">Check your inbox</h1>
+            <p class="signin-text">
+              We've emailed a sign-in link to <strong>{sent}</strong>. Click it to enter the
+              archive. The link opens this site directly — no password to remember.
+            </p>
+            <p class="signin-hint">Didn't arrive in a minute? Check spam, or <a href="/signin">try again</a>.</p>
+          </>
+        ) : (
+          <>
+            <h1 class="signin-title">Sign in to the Living Archive</h1>
+            <p class="signin-text">
+              Enter your email and we'll send you a one-time sign-in link.
+            </p>
+            {error && <p class="signin-error">{error}</p>}
+            <form method="post" action="/api/auth/signin" class="signin-form">
+              <input
+                type="email"
+                name="email"
+                required
+                autocomplete="email"
+                placeholder="you@example.org"
+                aria-label="Email address"
+              />
+              <button type="submit" class="signin-submit">Send my sign-in link</button>
+            </form>
+          </>
+        )}
+      </section>
+    </div>
+
+    <footer class="footer"><div class="footer-brand">Living Archive</div></footer>
+  </body>
+</html>
