@@ -422,6 +422,26 @@ a:hover { text-decoration: underline; }
   font-family: "Times New Roman", serif;
   font-size: 15px; font-weight: 700; color: #fff;
 }
+.footer-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #a8a39a;
+  letter-spacing: 0.02em;
+}
+.footer-meta a {
+  color: #a8a39a;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s, color 0.15s;
+}
+.footer-meta a:hover {
+  color: #fff;
+  border-bottom-color: #a8a39a;
+}
+.footer-dot {
+  margin: 0 8px;
+  opacity: 0.6;
+}
 
 /* ---------------------------------------------------------------------- */
 /* Contribution card — the cream "Help us learn about this image" surface */
