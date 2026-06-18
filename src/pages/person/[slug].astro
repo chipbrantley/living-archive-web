@@ -1,5 +1,6 @@
 ---
 import '../../styles/global.css';
+import UserMenu from '../../components/UserMenu.astro';
 import {
   fetchPersonBySlug,
   fetchIdentifiedImageIds,
@@ -54,6 +55,7 @@ const linkLabel = (url: string) => {
         <a class="brand" href="/">
           <span class="brand-title">Living Archive</span>
         </a>
+        <UserMenu />
       </div>
     </header>
 

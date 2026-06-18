@@ -1,5 +1,6 @@
 ---
 import '../../styles/global.css';
+import UserMenu from '../../components/UserMenu.astro';
 import { fetchPlaceBySlug, fetchImagesByIds, fetchPeopleWithImages } from '../../lib/airtable';
 import type { AirtablePlace, AirtableImage, PersonWithImages } from '../../lib/airtable';
 
@@ -47,6 +48,7 @@ const placeLine = place
         <a class="brand" href="/">
           <span class="brand-title">Living Archive</span>
         </a>
+        <UserMenu />
       </div>
     </header>
 

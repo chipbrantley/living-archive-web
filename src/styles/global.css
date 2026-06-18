@@ -1068,3 +1068,25 @@ a.chip-event:hover {
   font-style: italic;
   margin-left: 6px;
 }
+
+/* Signed-in indicator, top-right of the masthead */
+.user-menu {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.user-menu-name { white-space: nowrap; }
+.user-menu-signout {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.user-menu-signout:hover { border-color: var(--accent); color: var(--ink); }

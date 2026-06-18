@@ -1,5 +1,6 @@
 ---
 import '../../styles/global.css';
+import UserMenu from '../../components/UserMenu.astro';
 import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airtable';
 import type { AirtableImage, PersonChip, PlaceChip, EventChip, OrgChip, LogEntry } from '../../lib/airtable';
 
@@ -77,6 +78,7 @@ const watermarkLine = photographerFullName
         <a class="brand" href="/">
           <span class="brand-title">Living Archive</span>
         </a>
+        <UserMenu />
       </div>
     </header>
 

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import UserMenu from '../components/UserMenu.astro';
 import { fetchImagesWithFiles, pingAirtable } from '../lib/airtable';
 
 const error = await pingAirtable();
@@ -32,6 +33,7 @@ const images = [...featured, ...rest];
         <a class="brand" href="/">
           <span class="brand-title">Living Archive</span>
         </a>
+        <UserMenu />
       </div>
     </header>
 

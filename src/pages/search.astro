@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import UserMenu from '../components/UserMenu.astro';
 import { search, fetchImagesByIds } from '../lib/airtable';
 import type { SearchEntity, AirtableImage } from '../lib/airtable';
 
@@ -38,6 +39,7 @@ const monogram = (name: string) =>
         <a class="brand" href="/">
           <span class="brand-title">Living Archive</span>
         </a>
+        <UserMenu />
       </div>
     </header>
 

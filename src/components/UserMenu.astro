@@ -1,0 +1,13 @@
+---
+// Signed-in indicator for the masthead. Reads the user the gate attached
+// to locals. Renders nothing when there's no user (e.g. the sign-in page).
+const user = Astro.locals.user;
+---
+{user && (
+  <div class="user-menu">
+    <span class="user-menu-name">{user.name || user.email}</span>
+    <form method="post" action="/api/auth/signout">
+      <button type="submit" class="user-menu-signout">Sign out</button>
+    </form>
+  </div>
+)}
