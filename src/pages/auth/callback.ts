@@ -34,5 +34,6 @@ export const GET: APIRoute = async (ctx) => {
   }
 
   if (error) return ctx.redirect('/signin?error=' + encodeURIComponent(error));
-  return ctx.redirect('/signin?signedin=1');
+  // Signed in — drop straight into the archive.
+  return ctx.redirect('/');
 };

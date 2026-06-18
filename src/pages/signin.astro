@@ -7,7 +7,9 @@ const supabase = supabaseServer(Astro);
 const { data: { user } } = await supabase.auth.getUser();
 
 const sent = Astro.url.searchParams.get('sent');
-const error = Astro.url.searchParams.get('error');
+const errorParam = Astro.url.searchParams.get('error');
+const notInvited = errorParam === 'not-invited';
+const error = notInvited ? null : errorParam;
 const justSignedIn = Astro.url.searchParams.get('signedin') === '1';
 ---
 
@@ -35,6 +37,16 @@ const justSignedIn = Astro.url.searchParams.get('signedin') === '1';
             <form method="post" action="/api/auth/signout">
               <button type="submit" class="signin-submit signin-submit-secondary">Sign out</button>
             </form>
+          </>
+        ) : notInvited ? (
+          <>
+            <h1 class="signin-title">Not on the list yet</h1>
+            <p class="signin-text">
+              That email isn't among the archive's invited contributors yet. The Living
+              Archive is currently open to a small group by invitation. If you believe you
+              should have access, please contact the Proximity Partners team.
+            </p>
+            <p class="signin-hint"><a href="/signin">Try a different email</a></p>
           </>
         ) : sent ? (
           <>
