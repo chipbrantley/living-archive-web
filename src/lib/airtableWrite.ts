@@ -46,37 +46,6 @@ async function airtableWrite(
   return res.json();
 }
 
-/**
- * Find a Users record by email (preferred) or exact name; create one if
- * missing. This is the no-auth bridge into the schema's Users-linked
- * Submitter / Suggested-by fields.
- */
-export async function findOrCreateUser(name: string, email: string): Promise<string> {
-  const esc = (s: string) => s.replace(/'/g, "\\'").toLowerCase();
-  let formula = '';
-  if (email) {
-    formula = `LOWER({Email})='${esc(email)}'`;
-  } else if (name) {
-    formula = `AND(LOWER({Name})='${esc(name)}', {Email}=BLANK())`;
-  }
-  if (formula) {
-    const found = await airtableWrite(`/${USERS_TABLE}`, 'GET', undefined, {
-      filterByFormula: formula,
-      maxRecords: '1',
-    });
-    if (found.records?.length) return found.records[0].id;
-  }
-  const created = await airtableWrite(`/${USERS_TABLE}`, 'POST', {
-    fields: {
-      Name: name || 'Anonymous contributor',
-      ...(email ? { Email: email } : {}),
-      Role: 'Contributor',
-      Status: 'Active',
-      Notes: 'Created automatically by the alivingarchive.org contribution form.',
-    },
-  });
-  return created.id;
-}
 
 export interface PersonSubmission {
   id?: string; // People record id when the contributor picked an existing person
