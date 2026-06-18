@@ -308,7 +308,10 @@ const watermarkLine = photographerFullName
           <ul class="log-list">
             {log.map((entry) => (
               <li class="log-row">
-                <span class="log-text">{entry.text}</span>
+                <span class="log-text">
+                  {entry.text}
+                  {entry.by && <span class="log-by">— contributed by {entry.by}</span>}
+                </span>
                 {entry.date && <span class="log-date">{prettyDate(entry.date)}</span>}
               </li>
             ))}

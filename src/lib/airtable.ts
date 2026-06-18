@@ -198,7 +198,11 @@ export interface PlaceChip {
 export interface LogEntry {
   text: string;
   date: string | null; // ISO date
+  by?: string | null; // contributor's name, once attribution exists
 }
+// Internal: a log entry still carrying the submitter's Users record id,
+// before we resolve it to a name.
+type RawLogEntry = LogEntry & { byUserId?: string | null };
 
 const prettyDate = (iso: string | null): string | null => {
   if (!iso) return null;
@@ -241,7 +245,7 @@ export async function fetchImageChips(
   const contextPlaces: PlaceChip[] = [];
   const events: EventChip[] = [];
   const orgs: OrgChip[] = [];
-  const log: LogEntry[] = [];
+  const log: RawLogEntry[] = [];
   if (eventIds.length > 0) {
     const formula = `OR(${eventIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
     const data = await airtable('/Events', { filterByFormula: formula, pageSize: '100' });
@@ -261,7 +265,7 @@ export async function fetchImageChips(
   if (identificationIds.length > 0) {
     const formula = `OR(${identificationIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
     const idData = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
-    const personIds: { id: string; verified: boolean; on: string | null }[] = [];
+    const personIds: { id: string; verified: boolean; on: string | null; by: string | null }[] = [];
     for (const r of idData.records ?? []) {
       const pid = (r.fields['Person'] ?? [])[0];
       if (pid) {
@@ -269,6 +273,7 @@ export async function fetchImageChips(
           id: pid,
           verified: r.fields['Verification status'] === 'Verified',
           on: r.fields['Suggested on'] ?? null,
+          by: (r.fields['Suggested by'] ?? [])[0] ?? null,
         });
       }
     }
@@ -303,6 +308,7 @@ export async function fetchImageChips(
             log.push({
               text: `${person.name} identified in this photograph`,
               date: p.on,
+              byUserId: p.by,
             });
           }
         }
@@ -328,9 +334,28 @@ export async function fetchImageChips(
       const value = (r.fields['Proposed value'] ?? '').trim();
       if (!value) continue;
       const label = fieldName === 'Editorial notes' ? 'Community context' : fieldName;
-      log.push({ text: `${label}: ${value}`, date: r.fields['Submitted on'] ?? null });
+      log.push({
+        text: `${label}: ${value}`,
+        date: r.fields['Submitted on'] ?? null,
+        byUserId: (r.fields['Submitter'] ?? [])[0] ?? null,
+      });
     }
   }
+
+  // Resolve submitter ids -> names (skip the shared "Anonymous contributor").
+  const byIds = [...new Set(log.map((e) => e.byUserId).filter(Boolean) as string[])];
+  if (byIds.length > 0) {
+    const formula = `OR(${byIds.slice(0, 50).map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const data = await airtable('/Users', { filterByFormula: formula, pageSize: '100' });
+    const nameById: Record<string, string> = {};
+    for (const r of data.records ?? []) nameById[r.id] = r.fields['Name'] ?? '';
+    for (const e of log) {
+      const name = e.byUserId ? nameById[e.byUserId] : '';
+      e.by = name && name !== 'Anonymous contributor' ? name : null;
+      delete e.byUserId;
+    }
+  }
+
   log.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
   // Canonical chip order is rendered by the page; alphabetize within groups here.
   people.sort((a, b) => a.name.localeCompare(b.name));

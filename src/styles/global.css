@@ -1061,3 +1061,10 @@ a.chip-event:hover {
 }
 .signin-submit:hover { background: #000; }
 .signin-submit-secondary { background: var(--accent); }
+
+/* Contribution attribution in the log */
+.log-by {
+  color: var(--ink-faint);
+  font-style: italic;
+  margin-left: 6px;
+}

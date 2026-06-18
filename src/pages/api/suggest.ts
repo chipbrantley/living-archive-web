@@ -12,12 +12,11 @@
  *
  * People named -> Identifications records (Unverified).
  * Free text    -> a Pending Suggestions record (Editorial notes).
- * Submitter    -> found-or-created Users record.
+ * Submitter    -> the signed-in user's Airtable Users record (from the gate).
  */
 import type { APIRoute } from 'astro';
 import { fetchImageByNumber } from '../../lib/airtable';
 import {
-  findOrCreateUser,
   createIdentification,
   createFieldSuggestion,
   type PersonSubmission,
@@ -29,7 +28,11 @@ const ok = (body: unknown, status = 200) =>
     headers: { 'Content-Type': 'application/json' },
   });
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
+  // The gate guarantees a signed-in, allowlisted user reaches this endpoint.
+  const userRecId = locals.user?.id;
+  if (!userRecId) return ok({ error: 'Please sign in to contribute.' }, 401);
+
   let body: any;
   try {
     const raw = await request.text();
@@ -88,9 +91,6 @@ export const POST: APIRoute = async ({ request }) => {
     const image = await fetchImageByNumber(imageNumber);
     if (!image) return ok({ error: 'Unknown image.' }, 404);
 
-    // No auth yet: contributions are anonymous until the credential layer
-    // lands; the submitter link goes to a shared anonymous Users record.
-    const userRecId = await findOrCreateUser('', '');
     const today = new Date().toISOString().slice(0, 10);
 
     for (const person of people) {

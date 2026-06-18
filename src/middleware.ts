@@ -44,6 +44,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect('/signin?error=not-invited');
   }
 
-  context.locals.user = { email: allowed.email, name: allowed.name, role: allowed.role };
+  context.locals.user = {
+    id: allowed.id,
+    email: allowed.email,
+    name: allowed.name,
+    role: allowed.role,
+  };
   return next();
 });
