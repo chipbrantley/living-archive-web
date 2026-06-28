@@ -451,6 +451,29 @@ a.photog-pill-link:hover {
   opacity: 0.6;
 }
 
+/* Photographer landing page — portrait + bio */
+.photographer-intro {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+.photographer-portrait {
+  flex: 0 0 auto;
+  width: 168px;
+  height: 168px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+.photographer-intro-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .photographer-intro { flex-direction: column; gap: 16px; }
+  .photographer-portrait { width: 128px; height: 128px; }
+}
+
 /* ---------------------------------------------------------------------- */
 /* Contribution card — the cream "Help us learn about this image" surface */
 

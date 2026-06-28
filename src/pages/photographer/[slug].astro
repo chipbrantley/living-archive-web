@@ -72,10 +72,17 @@ const metaLine = photographer
 
       {photographer && (
         <>
-          <section class="intro">
-            <h1 class="intro-title">{photographer.name}</h1>
-            {metaLine && <div class="place-line">{metaLine}</div>}
-            {photographer.bio && <p class="intro-text">{photographer.bio}</p>}
+          <section class="intro photographer-intro">
+            {photographer.portraitUrl && (
+              <img class="photographer-portrait" src={photographer.portraitUrl} alt={`Portrait of ${photographer.name}`} loading="lazy" />
+            )}
+            <div class="photographer-intro-body">
+              <h1 class="intro-title">{photographer.name}</h1>
+              {metaLine && <div class="place-line">{metaLine}</div>}
+              {photographer.bio && photographer.bio.split(/\n+/).filter(Boolean).map((para) => (
+                <p class="intro-text">{para}</p>
+              ))}
+            </div>
           </section>
 
           {images.length === 0 && (

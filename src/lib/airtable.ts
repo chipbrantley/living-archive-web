@@ -612,6 +612,7 @@ export interface AirtablePhotographer {
   bio: string | null;
   activeDates: string | null;
   rightsHolder: string | null;
+  portraitUrl: string | null;
   imageIds: string[];
 }
 
@@ -629,6 +630,7 @@ export async function fetchPhotographerBySlug(slug: string): Promise<AirtablePho
   const r = records.find((rec) => slugifyPlace(rec.fields['Name'] ?? '') === slug);
   if (!r) return null;
   const f = r.fields;
+  const portrait = (f['Portrait'] ?? [])[0];
   return {
     id: r.id,
     name: f['Name'] ?? '',
@@ -636,6 +638,7 @@ export async function fetchPhotographerBySlug(slug: string): Promise<AirtablePho
     bio: f['Bio'] ?? null,
     activeDates: f['Active dates'] ?? null,
     rightsHolder: f['Estate / rights holder'] ?? null,
+    portraitUrl: portrait ? (portrait.thumbnails?.large?.url ?? portrait.url) : null,
     imageIds: f['Images'] ?? [],
   };
 }
