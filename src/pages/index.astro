@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import UserMenu from '../components/UserMenu.astro';
 import { fetchImagesWithFiles, pingAirtable } from '../lib/airtable';
+import { watermarkLine, photographerFullName } from '../lib/photographers';
 
 const error = await pingAirtable();
 const allImages = error ? [] : await fetchImagesWithFiles();
@@ -97,10 +98,7 @@ const images = [...featured, ...rest];
                             loading="lazy"
                           />
                           <span class="image-watermark image-watermark--tile">
-                            {(() => {
-                              const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
-                              return photog ? `© ${photog} / Living Archive` : 'Living Archive';
-                            })()}
+                            {watermarkLine(img.photographerName)}
                           </span>
                         </>
                       ) : (
@@ -117,7 +115,7 @@ const images = [...featured, ...rest];
                         <p class="tile-caption tile-caption-muted">Caption forthcoming</p>
                       ) : null}
                       <div class="tile-meta">
-                        <span class="tile-photog">{img.photographerName === 'MH' ? 'Matt Herron' : (img.photographerName ?? 'Unknown')}</span>
+                        <span class="tile-photog">{photographerFullName(img.photographerName) ?? 'Unknown'}</span>
                         <span class="tile-id">#{img.imageNumber}</span>
                       </div>
                     </div>

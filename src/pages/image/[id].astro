@@ -3,6 +3,7 @@ import '../../styles/global.css';
 import UserMenu from '../../components/UserMenu.astro';
 import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airtable';
 import type { AirtableImage, PersonChip, PlaceChip, EventChip, OrgChip, LogEntry } from '../../lib/airtable';
+import { photographerFullName as resolvePhotographer, watermarkLine as resolveWatermark } from '../../lib/photographers';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
@@ -52,6 +53,7 @@ const SCAN_CREDITS: Record<string, string> = {
     'Take Stock, a picture agency specializing in images of social change.',
   'Estate of Matt Herron': 'The Estate of Matt Herron (Jeannine Herron).',
   'Proximity Partners': 'Proximity Partners print documentation.',
+  'Jim Marshall Photography LLC': 'Courtesy of Jim Marshall Photography LLC.',
 };
 const scanCredit = image?.scanSource ? SCAN_CREDITS[image.scanSource] ?? null : null;
 
@@ -59,11 +61,8 @@ const pageTitle = image
   ? `Image ${image.imageNumber} — Living Archive`
   : `Image not found — Living Archive`;
 
-const photographerFullName =
-  image?.photographerName === 'MH' ? 'Matt Herron' : (image?.photographerName ?? null);
-const watermarkLine = photographerFullName
-  ? `© ${photographerFullName} / Living Archive`
-  : 'Living Archive';
+const photographerFullName = resolvePhotographer(image?.photographerName ?? null);
+const watermarkLine = resolveWatermark(image?.photographerName ?? null);
 ---
 
 <html lang="en">
@@ -114,7 +113,7 @@ const watermarkLine = photographerFullName
             <figure class="hero-image-wrap">
               <img
                 src={image.imageFile.displayUrl}
-                alt={image.caption ?? `Matt Herron #${image.imageNumber}`}
+                alt={image.caption ?? `${photographerFullName ?? 'Photograph'} #${image.imageNumber}`}
                 width={image.imageFile.displayWidth}
                 height={image.imageFile.displayHeight}
                 loading="eager"
@@ -192,7 +191,7 @@ const watermarkLine = photographerFullName
 
           <div class="subtitle">
             {image.photographerName && (
-              <span class="photog-pill">{image.photographerName === 'MH' ? 'Matt Herron' : image.photographerName}</span>
+              <span class="photog-pill">{photographerFullName}</span>
             )}
             {image.dateTaken && <span class="date-taken">{prettyDate(image.dateTaken)}</span>}
             <span class="id-mono">Archive ID: {image.imageNumber}</span>

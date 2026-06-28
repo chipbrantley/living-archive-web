@@ -2,6 +2,7 @@
 import '../../styles/global.css';
 import UserMenu from '../../components/UserMenu.astro';
 import { fetchPlaceBySlug, fetchImagesByIds, fetchPeopleWithImages } from '../../lib/airtable';
+import { watermarkLine, photographerFullName } from '../../lib/photographers';
 import type { AirtablePlace, AirtableImage, PersonWithImages } from '../../lib/airtable';
 
 const { slug } = Astro.params;
@@ -108,10 +109,7 @@ const placeLine = place
                     <div class="tile-image-wrap">
                       <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
                       <span class="image-watermark image-watermark--tile">
-                        {(() => {
-                          const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
-                          return photog ? `© ${photog} / Living Archive` : 'Living Archive';
-                        })()}
+                        {watermarkLine(img.photographerName)}
                       </span>
                     </div>
                     <div class="tile-body">
@@ -151,10 +149,7 @@ const placeLine = place
                           <div class="tile-image-wrap">
                             <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
                             <span class="image-watermark image-watermark--tile">
-                              {(() => {
-                                const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
-                                return photog ? `© ${photog} / Living Archive` : 'Living Archive';
-                              })()}
+                              {watermarkLine(img.photographerName)}
                             </span>
                           </div>
                           <div class="tile-body">

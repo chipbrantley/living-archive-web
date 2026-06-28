@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import UserMenu from '../components/UserMenu.astro';
 import { search, fetchImagesByIds } from '../lib/airtable';
+import { watermarkLine, photographerFullName } from '../lib/photographers';
 import type { SearchEntity, AirtableImage } from '../lib/airtable';
 
 const q = (Astro.url.searchParams.get('q') ?? '').trim();
@@ -98,10 +99,7 @@ const monogram = (name: string) =>
                     loading="lazy"
                   />
                   <span class="image-watermark image-watermark--tile">
-                    {(() => {
-                      const photog = img.photographerName === 'MH' ? 'Matt Herron' : img.photographerName;
-                      return photog ? `© ${photog} / Living Archive` : 'Living Archive';
-                    })()}
+                    {watermarkLine(img.photographerName)}
                   </span>
                 </div>
                 <div class="tile-body">
