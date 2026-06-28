@@ -180,6 +180,14 @@ a:hover { text-decoration: underline; }
   font-size: 12px;
   font-weight: 500;
 }
+a.photog-pill-link {
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+a.photog-pill-link:hover {
+  background: var(--accent);
+  color: #fff;
+}
 .subtitle .id-mono {
   font-family: "SF Mono", Menlo, monospace;
   font-size: 13px;

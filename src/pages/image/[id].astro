@@ -3,7 +3,7 @@ import '../../styles/global.css';
 import UserMenu from '../../components/UserMenu.astro';
 import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airtable';
 import type { AirtableImage, PersonChip, PlaceChip, EventChip, OrgChip, LogEntry } from '../../lib/airtable';
-import { photographerFullName as resolvePhotographer, watermarkLine as resolveWatermark } from '../../lib/photographers';
+import { photographerFullName as resolvePhotographer, watermarkLine as resolveWatermark, photographerSlug, captionSource } from '../../lib/photographers';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
@@ -63,6 +63,8 @@ const pageTitle = image
 
 const photographerFullName = resolvePhotographer(image?.photographerName ?? null);
 const watermarkLine = resolveWatermark(image?.photographerName ?? null);
+const captionSrc = captionSource(image?.photographerName ?? null);
+const photogSlug = photographerSlug(image?.photographerName ?? null);
 ---
 
 <html lang="en">
@@ -139,14 +141,14 @@ const watermarkLine = resolveWatermark(image?.photographerName ?? null);
               <p class="caption">{image.displayCaption}</p>
               {image.caption && image.caption !== image.displayCaption && (
                 <details class="caption-original">
-                  <summary>Original caption · Take Stock</summary>
+                  <summary>Original caption{captionSrc ? ` · ${captionSrc}` : ''}</summary>
                   <p>{image.caption}</p>
                 </details>
               )}
             </>
           ) : image.caption ? (
             <>
-              <div class="caption-kicker">Original caption · Take Stock</div>
+              <div class="caption-kicker">{captionSrc ? `Original caption · ${captionSrc}` : 'Caption · Living Archive'}</div>
               <p class="caption">{image.caption}</p>
             </>
           ) : null}
@@ -191,7 +193,9 @@ const watermarkLine = resolveWatermark(image?.photographerName ?? null);
 
           <div class="subtitle">
             {image.photographerName && (
-              <span class="photog-pill">{photographerFullName}</span>
+              photogSlug
+                ? <a class="photog-pill photog-pill-link" href={`/photographer/${photogSlug}`}>{photographerFullName}</a>
+                : <span class="photog-pill">{photographerFullName}</span>
             )}
             {image.dateTaken && <span class="date-taken">{prettyDate(image.dateTaken)}</span>}
             <span class="id-mono">Archive ID: {image.imageNumber}</span>

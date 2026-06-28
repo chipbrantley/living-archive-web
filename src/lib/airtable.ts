@@ -605,6 +605,41 @@ export async function fetchEventBySlug(slug: string): Promise<AirtableEvent | nu
   };
 }
 
+export interface AirtablePhotographer {
+  id: string;
+  name: string;
+  prefix: string | null;
+  bio: string | null;
+  activeDates: string | null;
+  rightsHolder: string | null;
+  imageIds: string[];
+}
+
+/** Find a Photographer by URL slug (slugified name); imageIds = reverse link. */
+export async function fetchPhotographerBySlug(slug: string): Promise<AirtablePhotographer | null> {
+  const records: any[] = [];
+  let offset: string | undefined;
+  do {
+    const params: Record<string, string> = { pageSize: '100' };
+    if (offset) params.offset = offset;
+    const data = await airtable('/Photographers', params);
+    records.push(...(data.records ?? []));
+    offset = data.offset;
+  } while (offset);
+  const r = records.find((rec) => slugifyPlace(rec.fields['Name'] ?? '') === slug);
+  if (!r) return null;
+  const f = r.fields;
+  return {
+    id: r.id,
+    name: f['Name'] ?? '',
+    prefix: f['Prefix'] ?? null,
+    bio: f['Bio'] ?? null,
+    activeDates: f['Active dates'] ?? null,
+    rightsHolder: f['Estate / rights holder'] ?? null,
+    imageIds: f['Images'] ?? [],
+  };
+}
+
 /** Org chips for a set of Organizations record ids. */
 export async function fetchOrgChipsByIds(ids: string[]): Promise<OrgChip[]> {
   if (ids.length === 0) return [];

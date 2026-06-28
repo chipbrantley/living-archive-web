@@ -1,0 +1,124 @@
+---
+import '../../styles/global.css';
+import UserMenu from '../../components/UserMenu.astro';
+import { fetchPhotographerBySlug, fetchImagesByIds } from '../../lib/airtable';
+import type { AirtablePhotographer, AirtableImage } from '../../lib/airtable';
+import { watermarkLine } from '../../lib/photographers';
+
+const { slug } = Astro.params;
+
+let photographer: AirtablePhotographer | null = null;
+let images: AirtableImage[] = [];
+let error: string | null = null;
+
+try {
+  photographer = await fetchPhotographerBySlug(slug ?? '');
+  if (photographer && photographer.imageIds.length > 0) {
+    images = (await fetchImagesByIds(photographer.imageIds)).filter((i) => i.imageFile);
+  }
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Unknown error.';
+}
+
+const pageTitle = photographer
+  ? `${photographer.name} — Living Archive`
+  : 'Photographer not found — Living Archive';
+const metaLine = photographer
+  ? [photographer.activeDates, photographer.rightsHolder].filter(Boolean).join(' · ')
+  : '';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">Living Archive</span>
+        </a>
+        <UserMenu />
+      </div>
+    </header>
+
+    <nav class="breadcrumb">
+      <a href="/">Browse</a>
+      <span class="sep">›</span>
+      <span>{photographer ? photographer.name : 'Photographer'}</span>
+    </nav>
+
+    <div class="page">
+      {error && (
+        <div class="card">
+          <div class="error-card">
+            <strong>Something went wrong.</strong>
+            <pre>{error}</pre>
+          </div>
+        </div>
+      )}
+
+      {!error && !photographer && (
+        <div class="card">
+          <h1 class="title">Photographer not found</h1>
+          <p>
+            We don't have a photographer by that name yet.
+            <a href="/">Back to browse</a>
+          </p>
+        </div>
+      )}
+
+      {photographer && (
+        <>
+          <section class="intro">
+            <h1 class="intro-title">{photographer.name}</h1>
+            {metaLine && <div class="place-line">{metaLine}</div>}
+            {photographer.bio && <p class="intro-text">{photographer.bio}</p>}
+          </section>
+
+          {images.length === 0 && (
+            <div class="card" style="margin-top:24px">
+              <p>No photographs by {photographer.name} are on the site yet.</p>
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <section class="section">
+              <div class="browse-header">
+                <h2 class="browse-title">Photographs by {photographer.name}</h2>
+                <span class="browse-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+              </div>
+              <div class="grid">
+                {images.map((img) => (
+                  <a class="tile" href={`/image/${img.imageNumber}`}>
+                    <div class="tile-image-wrap">
+                      <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                      <span class="image-watermark image-watermark--tile">{watermarkLine(img.photographerName)}</span>
+                    </div>
+                    <div class="tile-body">
+                      {img.title && <h3 class="tile-title">{img.title}</h3>}
+                      {img.caption && (
+                        <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">Living Archive</div>
+      <div class="footer-meta">
+        <span>© 2026 Proximity Partners</span>
+        <span class="footer-dot">·</span>
+        <a href="mailto:chip@proximitypartnership.com">Contact</a>
+      </div>
+    </footer>
+  </body>
+</html>

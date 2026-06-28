@@ -30,3 +30,21 @@ export function watermarkLine(prefix: string | null | undefined): string {
   const p = PHOTOGRAPHERS[prefix];
   return p ? `© ${p.credit}` : `© ${prefix} / Living Archive`;
 }
+
+const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/** URL slug for a photographer's landing page (matches the page's name-based lookup). */
+export function photographerSlug(prefix: string | null | undefined): string | null {
+  if (!prefix) return null;
+  const p = PHOTOGRAPHERS[prefix];
+  return p ? toSlug(p.fullName) : null;
+}
+
+/**
+ * Source of an image's verbatim "original" caption. Take Stock supplies the
+ * original captions for Herron only; other photographers' captions are the
+ * Living Archive's own, so they get no Take Stock attribution.
+ */
+export function captionSource(prefix: string | null | undefined): string | null {
+  return prefix === 'MH' ? 'Take Stock' : null;
+}
