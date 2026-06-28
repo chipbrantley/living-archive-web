@@ -456,6 +456,13 @@ a.photog-pill-link:hover {
   display: flex;
   gap: 28px;
   align-items: flex-start;
+  max-width: none; /* override .intro's 720px reading cap so the bio spans to the gallery's right edge */
+}
+.photographer-intro-body .intro-text {
+  margin: 0 0 0.95em;
+}
+.photographer-intro-body .intro-text:last-child {
+  margin-bottom: 0;
 }
 .photographer-portrait {
   flex: 0 0 auto;
