@@ -11,11 +11,18 @@ export interface Photographer {
   fullName: string;
   /** The credit shown after "©" in the image watermark / attribution line. */
   credit: string;
+  /**
+   * Who grants permission to reproduce this photographer's work — shown on the
+   * "Rights & reproductions" line. Distinct from the scan source (where the
+   * digital file is held): a Herron image's file may live at Stanford or Take
+   * Stock, but permission is granted by the Estate of Matt Herron.
+   */
+  rightsHolder: string;
 }
 
 const PHOTOGRAPHERS: Record<string, Photographer> = {
-  MH: { fullName: 'Matt Herron', credit: 'Matt Herron / Living Archive' },
-  JM: { fullName: 'Jim Marshall', credit: 'Jim Marshall Photography LLC' },
+  MH: { fullName: 'Matt Herron', credit: 'Matt Herron / Living Archive', rightsHolder: 'the Estate of Matt Herron' },
+  JM: { fullName: 'Jim Marshall', credit: 'Jim Marshall Photography LLC', rightsHolder: 'Jim Marshall Photography LLC' },
 };
 
 /** Full display name for a photographer prefix; falls back to the raw prefix. */
@@ -38,6 +45,12 @@ export function photographerSlug(prefix: string | null | undefined): string | nu
   if (!prefix) return null;
   const p = PHOTOGRAPHERS[prefix];
   return p ? toSlug(p.fullName) : null;
+}
+
+/** Who grants reproduction permission for a photographer's work (rights holder). */
+export function rightsHolder(prefix: string | null | undefined): string | null {
+  if (!prefix) return null;
+  return PHOTOGRAPHERS[prefix]?.rightsHolder ?? null;
 }
 
 /**

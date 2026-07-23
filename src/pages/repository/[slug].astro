@@ -1,0 +1,139 @@
+---
+import '../../styles/global.css';
+import UserMenu from '../../components/UserMenu.astro';
+import { fetchImagesByScanSource } from '../../lib/airtable';
+import type { AirtableImage } from '../../lib/airtable';
+import { watermarkLine } from '../../lib/photographers';
+import { repositoryBySlug } from '../../lib/repositories';
+
+const { slug } = Astro.params;
+const repository = repositoryBySlug(slug);
+
+let images: AirtableImage[] = [];
+let error: string | null = null;
+
+if (repository) {
+  try {
+    images = (await fetchImagesByScanSource(repository.scanSource)).filter((i) => i.imageFile);
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Unknown error.';
+  }
+}
+
+const pageTitle = repository
+  ? `${repository.name} — Living Archive`
+  : 'Repository not found — Living Archive';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/">
+          <span class="brand-title">Living Archive</span>
+        </a>
+        <UserMenu />
+      </div>
+    </header>
+
+    <nav class="breadcrumb">
+      <a href="/">Browse</a>
+      <span class="sep">›</span>
+      <span>{repository ? repository.name : 'Repository'}</span>
+    </nav>
+
+    <div class="page">
+      {!repository && (
+        <div class="card">
+          <h1 class="title">Repository not found</h1>
+          <p>
+            We don't have a repository by that name yet.
+            <a href="/">Back to browse</a>
+          </p>
+        </div>
+      )}
+
+      {repository && (
+        <>
+          <section class="intro repository-intro">
+            <h1 class="intro-title">{repository.name}</h1>
+            <div class="place-line">{repository.kind}</div>
+
+            {repository.blurb.split(/\n+/).filter(Boolean).map((para) => (
+              <p class="intro-text">{para}</p>
+            ))}
+
+            <div class="repository-request">
+              <h2 class="repository-request-title">Obtaining copies &amp; reproduction rights</h2>
+              <p class="intro-text">{repository.howToRequest}</p>
+            </div>
+
+            {repository.links.length > 0 && (
+              <ul class="repository-links">
+                {repository.links.map((link) => (
+                  <li>
+                    <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {error && (
+            <div class="card" style="margin-top:24px">
+              <div class="error-card">
+                <strong>Couldn't load images.</strong>
+                <pre>{error}</pre>
+              </div>
+            </div>
+          )}
+
+          {!error && images.length === 0 && (
+            <div class="card" style="margin-top:24px">
+              <p>No images from this repository are on the site yet.</p>
+            </div>
+          )}
+
+          {images.length > 0 && (
+            <section class="section">
+              <div class="browse-header">
+                <h2 class="browse-title">Images held here</h2>
+                <span class="browse-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+              </div>
+              <div class="grid">
+                {images.map((img) => (
+                  <a class="tile" href={`/image/${img.imageNumber}`}>
+                    <div class="tile-image-wrap">
+                      <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                      <span class="image-watermark image-watermark--tile">{watermarkLine(img.photographerName)}</span>
+                    </div>
+                    <div class="tile-body">
+                      {img.title && <h3 class="tile-title">{img.title}</h3>}
+                      {img.caption && (
+                        <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">Living Archive</div>
+      <div class="footer-meta">
+        <span>© 2026 Proximity Partners</span>
+        <span class="footer-dot">·</span>
+        <a href="mailto:chip@proximitypartnership.com">Contact</a>
+      </div>
+    </footer>
+  </body>
+</html>

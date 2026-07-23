@@ -799,3 +799,23 @@ export async function fetchImagesByIds(ids: string[]): Promise<AirtableImage[]> 
   images.sort((a, b) => a.imageNumber.localeCompare(b.imageNumber));
   return images;
 }
+
+/** All images whose "Scan source" matches a given repository value (with a file). */
+export async function fetchImagesByScanSource(scanSource: string): Promise<AirtableImage[]> {
+  const escaped = scanSource.replace(/'/g, "\\'");
+  const formula = `{Scan source}='${escaped}'`;
+  const images: AirtableImage[] = [];
+  let offset: string | undefined;
+  do {
+    const params: Record<string, string> = {
+      filterByFormula: formula,
+      pageSize: '100',
+    };
+    if (offset) params.offset = offset;
+    const data = await airtable('/Images', params);
+    images.push(...(data.records ?? []).map(mapImageRecord));
+    offset = data.offset;
+  } while (offset);
+  images.sort((a, b) => a.imageNumber.localeCompare(b.imageNumber));
+  return images;
+}

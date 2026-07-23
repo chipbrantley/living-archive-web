@@ -976,9 +976,60 @@ a.chip-event:hover {
   font-size: 12px;
   font-style: italic;
   color: var(--ink-faint);
-  margin: -12px 0 20px;
+  margin: -12px 0 8px;
   line-height: 1.5;
 }
+
+/* Rights & reproductions — where to obtain copies, beneath the source credit */
+.rights-repro {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 0 0 20px;
+  line-height: 1.6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.rights-repro strong { font-weight: 600; color: var(--ink); }
+.rights-repro-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rights-repro-link:hover { text-decoration: underline; }
+
+/* Repository landing page */
+.repository-intro { max-width: 760px; }
+.repository-request {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: var(--accent-soft);
+  border-radius: 8px;
+}
+.repository-request-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+.repository-request .intro-text { margin: 0; }
+.repository-links {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.repository-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.repository-links a:hover { text-decoration: underline; }
 
 /* Browse pagination — "Show more" reveals the next page of tiles */
 .tile-hidden { display: none; }
