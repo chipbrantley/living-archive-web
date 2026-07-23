@@ -91,54 +91,53 @@ const metaLine = photographer
               {photographer.bio && photographer.bio.split(/\n+/).filter(Boolean).map((para) => (
                 <p class="intro-text">{para}</p>
               ))}
+
+              {/* Inside the bio column so it shares the bio's left and right edges. */}
+              {(collection || config?.rightsHolder) && (
+                <div class="repository-request" id="reproductions">
+                  <h2 class="repository-request-title">Collection &amp; reproductions</h2>
+
+                  {collection ? (
+                    <p class="intro-text">
+                      {photographer.name}'s negatives, contact sheets, and high-resolution scans are
+                      held in the {collection.name}
+                      {collection.number ? ` (${collection.number})` : ''}
+                      {holdingRepository ? ' at ' : ''}
+                      {holdingRepository && (
+                        <a href={`/repository/${holdingRepository.slug}`}>{holdingRepository.name}</a>
+                      )}.
+                      {config?.rightsHolder && (
+                        <> Permission to reproduce is granted by {config.rightsHolder}, while the
+                        high-resolution file is supplied by the repository — a request generally needs
+                        to reach both.</>
+                      )}
+                    </p>
+                  ) : (
+                    <p class="intro-text">
+                      Permission to reproduce {photographer.name}'s work is granted by {config!.rightsHolder}.
+                    </p>
+                  )}
+
+                  {collection?.citation && (
+                    <div class="citation-block">
+                      <div class="citation-label">Credit line for publication</div>
+                      <p class="citation-text">{collection.citation}</p>
+                    </div>
+                  )}
+
+                  {collection?.links && collection.links.length > 0 && (
+                    <ul class="repository-links">
+                      {collection.links.map((link) => (
+                        <li>
+                          <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           </section>
-
-          {(collection || config?.rightsHolder) && (
-            <section class="intro repository-intro" id="reproductions">
-              <div class="repository-request">
-                <h2 class="repository-request-title">Collection &amp; reproductions</h2>
-
-                {collection ? (
-                  <p class="intro-text">
-                    {photographer.name}'s negatives, contact sheets, and high-resolution scans are
-                    held in the {collection.name}
-                    {collection.number ? ` (${collection.number})` : ''}
-                    {holdingRepository ? ' at ' : ''}
-                    {holdingRepository && (
-                      <a href={`/repository/${holdingRepository.slug}`}>{holdingRepository.name}</a>
-                    )}.
-                    {config?.rightsHolder && (
-                      <> Permission to reproduce is granted by {config.rightsHolder}, while the
-                      high-resolution file is supplied by the repository — a request generally needs
-                      to reach both.</>
-                    )}
-                  </p>
-                ) : (
-                  <p class="intro-text">
-                    Permission to reproduce {photographer.name}'s work is granted by {config!.rightsHolder}.
-                  </p>
-                )}
-
-                {collection?.citation && (
-                  <div class="citation-block">
-                    <div class="citation-label">Credit line for publication</div>
-                    <p class="citation-text">{collection.citation}</p>
-                  </div>
-                )}
-
-                {collection?.links && collection.links.length > 0 && (
-                  <ul class="repository-links">
-                    {collection.links.map((link) => (
-                      <li>
-                        <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </section>
-          )}
 
           {images.length === 0 && (
             <div class="card" style="margin-top:24px">
