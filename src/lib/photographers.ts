@@ -36,6 +36,13 @@ export interface PhotographerCollection {
   name: string;
   /** Collection call number, e.g. "M2866". */
   number?: string;
+  /**
+   * The repository's official credit line for this collection, VERBATIM — the
+   * wording it supplies for media releases and publication (this is the form
+   * the AP has used for Herron images). Per-collection, not per-repository:
+   * one institution's other archives each carry their own citation.
+   */
+  citation?: string;
   /** Finding aid / catalog records for this specific collection. */
   links?: { label: string; url: string }[];
 }
@@ -49,9 +56,11 @@ const PHOTOGRAPHERS: Record<string, Photographer> = {
       repositorySlug: 'stanford',
       name: 'Matt Herron photography archive',
       number: 'M2866',
+      citation:
+        'Matt Herron photography archive (M2866). Dept. of Special Collections and University Archives, Stanford University Libraries, Stanford, California',
       links: [
         { label: 'Finding aid (M2866)', url: 'https://archives.stanford.edu/catalog/m2866' },
-        { label: 'Stanford Libraries catalog record', url: 'https://searchworks.stanford.edu/view/14174773' },
+        { label: 'Stanford University Libraries catalog record', url: 'https://searchworks.stanford.edu/view/14174773' },
       ],
     },
   },

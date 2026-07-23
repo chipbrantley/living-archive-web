@@ -3,7 +3,8 @@ import '../../styles/global.css';
 import UserMenu from '../../components/UserMenu.astro';
 import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airtable';
 import type { AirtableImage, PersonChip, PlaceChip, EventChip, OrgChip, LogEntry } from '../../lib/airtable';
-import { photographerFullName as resolvePhotographer, watermarkLine as resolveWatermark, photographerSlug, captionSource, rightsHolder as resolveRightsHolder } from '../../lib/photographers';
+import { photographerFullName as resolvePhotographer, watermarkLine as resolveWatermark, photographerSlug, captionSource, rightsHolder as resolveRightsHolder, collectionFor } from '../../lib/photographers';
+import { repositoryByScanSource } from '../../lib/repositories';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
@@ -45,17 +46,31 @@ if (!imageId) {
 const monogram = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
-// Per-image source credit. Stanford's wording is their official citation, verbatim.
+// Per-image source credit, keyed by scan source. These are institution-level
+// fallbacks; where a collection supplies its own official citation, that wins
+// (see below) — one repository holds many archives, each with its own credit
+// line, so the citation can't live at the scan-source level.
 const SCAN_CREDITS: Record<string, string> = {
   'Stanford Special Collections':
-    'Matt Herron photography archive (M2866). Dept. of Special Collections and University Archives, Stanford University (Matt and Jeannine Herron).',
+    'Dept. of Special Collections and University Archives, Stanford University Libraries, Stanford, California',
   'Take Stock':
     'Take Stock, a picture agency specializing in images of social change.',
   'Estate of Matt Herron': 'The Estate of Matt Herron (Jeannine Herron).',
   'Proximity Partners': 'Proximity Partners print documentation.',
   'Jim Marshall Photography LLC': 'Courtesy of Jim Marshall Photography LLC.',
 };
-const scanCredit = image?.scanSource ? SCAN_CREDITS[image.scanSource] ?? null : null;
+
+// Prefer the holding collection's own official citation — but only when this
+// image's scan actually came from the repository that holds that collection
+// (a Herron scan from Take Stock gets Take Stock's credit, not Stanford's).
+const imageCollection = collectionFor(image?.photographerName ?? null);
+const scanRepository = repositoryByScanSource(image?.scanSource ?? null);
+const collectionCitation =
+  imageCollection && scanRepository && imageCollection.repositorySlug === scanRepository.slug
+    ? imageCollection.citation ?? null
+    : null;
+const scanCredit =
+  collectionCitation ?? (image?.scanSource ? SCAN_CREDITS[image.scanSource] ?? null : null);
 
 const pageTitle = image
   ? `Image ${image.imageNumber} — Living Archive`

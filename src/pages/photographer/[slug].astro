@@ -120,6 +120,13 @@ const metaLine = photographer
                   </p>
                 )}
 
+                {collection?.citation && (
+                  <div class="citation-block">
+                    <div class="citation-label">Credit line for publication</div>
+                    <p class="citation-text">{collection.citation}</p>
+                  </div>
+                )}
+
                 {collection?.links && collection.links.length > 0 && (
                   <ul class="repository-links">
                     {collection.links.map((link) => (

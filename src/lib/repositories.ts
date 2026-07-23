@@ -43,11 +43,11 @@ export interface Repository {
 const REPOSITORIES: Repository[] = [
   {
     scanSource: 'Stanford Special Collections',
-    name: 'Stanford Libraries — Special Collections',
+    name: 'Stanford University Libraries — Special Collections',
     slug: 'stanford',
     kind: 'Holding repository — high-resolution scans',
     blurb:
-      "Stanford Libraries' Department of Special Collections & University Archives holds several of the photographic archives represented in A Living Archive, including the negatives, contact sheets, and high-resolution digital scans behind them.",
+      "The Department of Special Collections and University Archives, Stanford University Libraries, holds several of the photographic archives represented in A Living Archive — including the negatives, contact sheets, and high-resolution digital scans behind them.",
     howToRequest:
       'Stanford holds the high-resolution scans, so any request for a digital file needs to come to Stanford. Permission to reproduce an image is granted separately, by the rights holder of the particular collection — so a request generally needs to reach both. See the collection below for who grants permission for a given photographer’s work.',
     links: [],

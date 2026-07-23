@@ -1031,6 +1031,27 @@ a.chip-event:hover {
 }
 .repository-links a:hover { text-decoration: underline; }
 
+/* Official credit line — meant to be read and copied verbatim */
+.citation-block {
+  margin-top: 16px;
+  border-left: 3px solid var(--accent);
+  padding: 2px 0 2px 14px;
+}
+.citation-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.citation-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
 /* Collections held at a repository — one card per archive */
 .collection-list {
   display: flex;
