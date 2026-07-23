@@ -33,8 +33,13 @@ export interface Repository {
   kind: string;
   /** What the institution is and what it holds (paragraphs split on blank lines). */
   blurb: string;
-  /** The institutional half: how this repository supplies a high-resolution file. */
-  howToRequest: string;
+  /**
+   * The institutional half: how to reach this repository — for on-site
+   * research, for material beyond what the Living Archive shows, and for
+   * high-resolution files. Deliberately broader than "requesting a scan":
+   * a viewer may want to consult the originals, not just publish one.
+   */
+  access: string;
   /** Institution-level links (general contact / reproductions page). Collection
    *  finding aids belong on the collection, not here. */
   links: RepositoryLink[];
@@ -45,11 +50,11 @@ const REPOSITORIES: Repository[] = [
     scanSource: 'Stanford Special Collections',
     name: 'Stanford University Libraries — Special Collections',
     slug: 'stanford',
-    kind: 'Holding repository — high-resolution scans',
+    kind: 'Holding repository — original negatives, contact sheets, and high-resolution scans',
     blurb:
       "The Department of Special Collections and University Archives, Stanford University Libraries, holds several of the photographic archives represented in A Living Archive — including the negatives, contact sheets, and high-resolution digital scans behind them.",
-    howToRequest:
-      'Stanford holds the high-resolution scans, so any request for a digital file needs to come to Stanford. Permission to reproduce an image is granted separately, by the rights holder of the particular collection — so a request generally needs to reach both. See the collection below for who grants permission for a given photographer’s work.',
+    access:
+      'Stanford holds the original negatives and contact sheets along with the high-resolution scans — considerably more material than appears here. Researchers who want to consult the originals on site, to see images beyond those shown here, or to obtain a high-resolution digital file should contact Stanford directly. Permission to reproduce an image is granted separately, by the rights holder of the particular collection, so a reproduction request generally needs to reach both. See the collection below for who grants permission for a given photographer’s work.',
     links: [],
   },
 ];
