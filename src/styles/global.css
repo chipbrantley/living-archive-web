@@ -1000,7 +1000,9 @@ a.chip-event:hover {
 .rights-repro-link:hover { text-decoration: underline; }
 
 /* Repository landing page */
-.repository-intro { max-width: 760px; }
+/* Override .intro's reading-width cap so the heading and the request box sit
+   flush with the collection cards below them. */
+.repository-intro { max-width: none; }
 .repository-request {
   margin-top: 20px;
   padding: 18px 20px;
