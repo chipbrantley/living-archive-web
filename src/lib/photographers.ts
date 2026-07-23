@@ -18,10 +18,43 @@ export interface Photographer {
    * Stock, but permission is granted by the Estate of Matt Herron.
    */
   rightsHolder: string;
+  /**
+   * The archive this photographer's work lives in at a holding repository.
+   * This is the single source of truth for collection-level facts: the
+   * repository page derives its "collections held here" list from these, and
+   * the photographer page renders the reproductions guidance from them.
+   * Omit for photographers whose work isn't deposited at a repository (e.g.
+   * an estate that still holds its own negatives).
+   */
+  collection?: PhotographerCollection;
+}
+
+export interface PhotographerCollection {
+  /** Slug of the holding repository (see repositories.ts). */
+  repositorySlug: string;
+  /** Formal name of the archive, e.g. "Matt Herron photography archive". */
+  name: string;
+  /** Collection call number, e.g. "M2866". */
+  number?: string;
+  /** Finding aid / catalog records for this specific collection. */
+  links?: { label: string; url: string }[];
 }
 
 const PHOTOGRAPHERS: Record<string, Photographer> = {
-  MH: { fullName: 'Matt Herron', credit: 'Matt Herron / Living Archive', rightsHolder: 'the Estate of Matt Herron' },
+  MH: {
+    fullName: 'Matt Herron',
+    credit: 'Matt Herron / Living Archive',
+    rightsHolder: 'the Estate of Matt Herron',
+    collection: {
+      repositorySlug: 'stanford',
+      name: 'Matt Herron photography archive',
+      number: 'M2866',
+      links: [
+        { label: 'Finding aid (M2866)', url: 'https://archives.stanford.edu/catalog/m2866' },
+        { label: 'Stanford Libraries catalog record', url: 'https://searchworks.stanford.edu/view/14174773' },
+      ],
+    },
+  },
   JM: { fullName: 'Jim Marshall', credit: 'Jim Marshall Photography LLC', rightsHolder: 'Jim Marshall Photography LLC' },
 };
 
@@ -51,6 +84,27 @@ export function photographerSlug(prefix: string | null | undefined): string | nu
 export function rightsHolder(prefix: string | null | undefined): string | null {
   if (!prefix) return null;
   return PHOTOGRAPHERS[prefix]?.rightsHolder ?? null;
+}
+
+/** The archive a photographer's work is held in, or null if not deposited. */
+export function collectionFor(prefix: string | null | undefined): PhotographerCollection | null {
+  if (!prefix) return null;
+  return PHOTOGRAPHERS[prefix]?.collection ?? null;
+}
+
+/**
+ * Look a photographer's config up by their page slug (the photographer page
+ * fetches its record from Airtable by slug, and needs the config to render
+ * reproductions guidance).
+ */
+export function photographerConfigBySlug(
+  slug: string | null | undefined,
+): (Photographer & { prefix: string }) | null {
+  if (!slug) return null;
+  for (const [prefix, p] of Object.entries(PHOTOGRAPHERS)) {
+    if (toSlug(p.fullName) === slug) return { ...p, prefix };
+  }
+  return null;
 }
 
 /**

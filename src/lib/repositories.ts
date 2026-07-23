@@ -3,13 +3,19 @@
 // the archive. Each repository is keyed to a "Scan source" value on the Images
 // table, so a repository's page automatically gathers every image it holds.
 //
-// This is where a viewer who wants a high-resolution file or reproduction
-// rights is sent (per Ben Stone / Stanford's request, July 2026). The narrative
-// text here is a working draft meant to be refined with each repository.
+// LEVELS (this matters): a repository is an INSTITUTION, and one institution
+// can hold many collections — Stanford holds the Herron, Fitch, and Wakayama
+// archives. So "how do I obtain a copy" splits in two:
+//   - the FILE half is institutional and shared across every collection the
+//     repository holds — it lives here;
+//   - the RIGHTS half is collection-specific (which estate grants permission,
+//     which call number, which finding aid) — it lives on the photographer,
+//     in photographers.ts, since a collection maps 1:1 to a photographer.
+// The repository page derives its "collections held here" list from the images
+// it holds, so a new collection appears automatically once its images are in.
 //
 // To add a repository: add an entry whose `scanSource` exactly matches the
-// Images "Scan source" option value. The page and the image-page "Rights &
-// reproductions" link light up automatically.
+// Images "Scan source" option value.
 
 export interface RepositoryLink {
   label: string;
@@ -25,11 +31,12 @@ export interface Repository {
   slug: string;
   /** One-line role, shown under the heading. */
   kind: string;
-  /** What the repository is and what it holds (one or more paragraphs, split on blank lines). */
+  /** What the institution is and what it holds (paragraphs split on blank lines). */
   blurb: string;
-  /** How to obtain a high-resolution file or reproduction rights. */
+  /** The institutional half: how this repository supplies a high-resolution file. */
   howToRequest: string;
-  /** Catalog records, finding aids, agency pages, etc. */
+  /** Institution-level links (general contact / reproductions page). Collection
+   *  finding aids belong on the collection, not here. */
   links: RepositoryLink[];
 }
 
@@ -40,13 +47,10 @@ const REPOSITORIES: Repository[] = [
     slug: 'stanford',
     kind: 'Holding repository — high-resolution scans',
     blurb:
-      "Stanford Libraries' Department of Special Collections & University Archives holds the Matt Herron photography archive (collection M2866) — the negatives, contact sheets, and high-resolution digital scans behind many of the Herron images in A Living Archive.",
+      "Stanford Libraries' Department of Special Collections & University Archives holds several of the photographic archives represented in A Living Archive, including the negatives, contact sheets, and high-resolution digital scans behind them.",
     howToRequest:
-      'To obtain a high-resolution file or to reproduce a Matt Herron photograph, two parties are typically involved: permission to reproduce is granted by the Estate of Matt Herron, and the digital file is provided by Stanford Special Collections, which holds the scans. A request generally needs to reach both. Many Herron images are also available through Take Stock, the picture agency.',
-    links: [
-      { label: 'Matt Herron photography archive — finding aid (M2866)', url: 'https://archives.stanford.edu/catalog/m2866' },
-      { label: 'Stanford Libraries catalog record', url: 'https://searchworks.stanford.edu/view/14174773' },
-    ],
+      'Stanford holds the high-resolution scans, so any request for a digital file needs to come to Stanford. Permission to reproduce an image is granted separately, by the rights holder of the particular collection — so a request generally needs to reach both. See the collection below for who grants permission for a given photographer’s work.',
+    links: [],
   },
 ];
 

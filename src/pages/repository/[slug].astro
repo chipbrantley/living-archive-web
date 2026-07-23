@@ -3,7 +3,13 @@ import '../../styles/global.css';
 import UserMenu from '../../components/UserMenu.astro';
 import { fetchImagesByScanSource } from '../../lib/airtable';
 import type { AirtableImage } from '../../lib/airtable';
-import { watermarkLine } from '../../lib/photographers';
+import {
+  watermarkLine,
+  photographerFullName,
+  photographerSlug,
+  rightsHolder,
+  collectionFor,
+} from '../../lib/photographers';
 import { repositoryBySlug } from '../../lib/repositories';
 
 const { slug } = Astro.params;
@@ -19,6 +25,28 @@ if (repository) {
     error = e instanceof Error ? e.message : 'Unknown error.';
   }
 }
+
+// One institution holds many collections. Group the images it holds by
+// photographer — each group is a collection — so a new archive deposited here
+// appears on this page as soon as its images are in, with no edit.
+const grouped = new Map<string, AirtableImage[]>();
+for (const img of images) {
+  const key = img.photographerName ?? '';
+  if (!grouped.has(key)) grouped.set(key, []);
+  grouped.get(key)!.push(img);
+}
+
+const collections = [...grouped.entries()]
+  .map(([prefix, imgs]) => ({
+    prefix,
+    name: photographerFullName(prefix) ?? 'Unattributed',
+    slug: photographerSlug(prefix),
+    permission: rightsHolder(prefix),
+    collection: collectionFor(prefix),
+    count: imgs.length,
+    thumbs: imgs.slice(0, 4),
+  }))
+  .sort((a, b) => b.count - a.count);
 
 const pageTitle = repository
   ? `${repository.name} — Living Archive`
@@ -69,7 +97,7 @@ const pageTitle = repository
             ))}
 
             <div class="repository-request">
-              <h2 class="repository-request-title">Obtaining copies &amp; reproduction rights</h2>
+              <h2 class="repository-request-title">Requesting a high-resolution file</h2>
               <p class="intro-text">{repository.howToRequest}</p>
             </div>
 
@@ -87,38 +115,79 @@ const pageTitle = repository
           {error && (
             <div class="card" style="margin-top:24px">
               <div class="error-card">
-                <strong>Couldn't load images.</strong>
+                <strong>Couldn't load collections.</strong>
                 <pre>{error}</pre>
               </div>
             </div>
           )}
 
-          {!error && images.length === 0 && (
+          {!error && collections.length === 0 && (
             <div class="card" style="margin-top:24px">
-              <p>No images from this repository are on the site yet.</p>
+              <p>No collections from this repository are on the site yet.</p>
             </div>
           )}
 
-          {images.length > 0 && (
+          {collections.length > 0 && (
             <section class="section">
               <div class="browse-header">
-                <h2 class="browse-title">Images held here</h2>
-                <span class="browse-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+                <h2 class="browse-title">Collections held here</h2>
+                <span class="browse-count">
+                  {collections.length} {collections.length === 1 ? 'collection' : 'collections'}
+                </span>
               </div>
-              <div class="grid">
-                {images.map((img) => (
-                  <a class="tile" href={`/image/${img.imageNumber}`}>
-                    <div class="tile-image-wrap">
-                      <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
-                      <span class="image-watermark image-watermark--tile">{watermarkLine(img.photographerName)}</span>
+
+              <div class="collection-list">
+                {collections.map((c) => (
+                  <article class="collection-card">
+                    <h3 class="collection-card-title">
+                      {c.slug
+                        ? <a href={`/photographer/${c.slug}`}>{c.collection?.name ?? `Photographs by ${c.name}`}</a>
+                        : <span>{c.collection?.name ?? `Photographs by ${c.name}`}</span>}
+                    </h3>
+
+                    <div class="collection-card-meta">
+                      {c.collection?.number && <span class="collection-number">{c.collection.number}</span>}
+                      <span>{c.count} {c.count === 1 ? 'image' : 'images'} in the Living Archive</span>
                     </div>
-                    <div class="tile-body">
-                      {img.title && <h3 class="tile-title">{img.title}</h3>}
-                      {img.caption && (
-                        <p class="tile-caption">{img.caption.length > 120 ? img.caption.slice(0, 120) + '…' : img.caption}</p>
-                      )}
-                    </div>
-                  </a>
+
+                    {c.permission && (
+                      <p class="collection-card-permission">
+                        Permission to reproduce is granted by {c.permission}.
+                      </p>
+                    )}
+
+                    {c.collection?.links && c.collection.links.length > 0 && (
+                      <ul class="repository-links">
+                        {c.collection.links.map((link) => (
+                          <li>
+                            <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {c.thumbs.length > 0 && (
+                      <div class="collection-thumbs">
+                        {c.thumbs.map((img) => (
+                          <a class="collection-thumb" href={`/image/${img.imageNumber}`}>
+                            <img src={img.imageFile!.displayUrl} alt={img.caption ?? `Image ${img.imageNumber}`} loading="lazy" />
+                            <span class="image-watermark image-watermark--tile">{watermarkLine(img.photographerName)}</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                    {c.slug && (
+                      <div class="collection-card-actions">
+                        <a class="rights-repro-link" href={`/photographer/${c.slug}#reproductions`}>
+                          How to obtain copies →
+                        </a>
+                        <a class="rights-repro-link" href={`/photographer/${c.slug}`}>
+                          View all {c.count} →
+                        </a>
+                      </div>
+                    )}
+                  </article>
                 ))}
               </div>
             </section>

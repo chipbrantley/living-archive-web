@@ -3,9 +3,18 @@ import '../../styles/global.css';
 import UserMenu from '../../components/UserMenu.astro';
 import { fetchPhotographerBySlug, fetchImagesByIds } from '../../lib/airtable';
 import type { AirtablePhotographer, AirtableImage } from '../../lib/airtable';
-import { watermarkLine } from '../../lib/photographers';
+import { watermarkLine, photographerConfigBySlug } from '../../lib/photographers';
+import { repositoryBySlug } from '../../lib/repositories';
 
 const { slug } = Astro.params;
+
+// Collection-level reproductions facts (which estate grants permission, which
+// archive holds the negatives, its call number and finding aid). A collection
+// maps 1:1 to a photographer, so this is where that guidance belongs; the
+// repository page carries only the shared institutional half.
+const config = photographerConfigBySlug(slug ?? '');
+const collection = config?.collection ?? null;
+const holdingRepository = collection ? repositoryBySlug(collection.repositorySlug) : null;
 
 let photographer: AirtablePhotographer | null = null;
 let images: AirtableImage[] = [];
@@ -84,6 +93,45 @@ const metaLine = photographer
               ))}
             </div>
           </section>
+
+          {(collection || config?.rightsHolder) && (
+            <section class="intro repository-intro" id="reproductions">
+              <div class="repository-request">
+                <h2 class="repository-request-title">Collection &amp; reproductions</h2>
+
+                {collection ? (
+                  <p class="intro-text">
+                    {photographer.name}'s negatives, contact sheets, and high-resolution scans are
+                    held in the {collection.name}
+                    {collection.number ? ` (${collection.number})` : ''}
+                    {holdingRepository ? ' at ' : ''}
+                    {holdingRepository && (
+                      <a href={`/repository/${holdingRepository.slug}`}>{holdingRepository.name}</a>
+                    )}.
+                    {config?.rightsHolder && (
+                      <> Permission to reproduce is granted by {config.rightsHolder}, while the
+                      high-resolution file is supplied by the repository — a request generally needs
+                      to reach both.</>
+                    )}
+                  </p>
+                ) : (
+                  <p class="intro-text">
+                    Permission to reproduce {photographer.name}'s work is granted by {config!.rightsHolder}.
+                  </p>
+                )}
+
+                {collection?.links && collection.links.length > 0 && (
+                  <ul class="repository-links">
+                    {collection.links.map((link) => (
+                      <li>
+                        <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+          )}
 
           {images.length === 0 && (
             <div class="card" style="margin-top:24px">

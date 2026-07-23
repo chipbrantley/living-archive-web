@@ -4,7 +4,6 @@ import UserMenu from '../../components/UserMenu.astro';
 import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airtable';
 import type { AirtableImage, PersonChip, PlaceChip, EventChip, OrgChip, LogEntry } from '../../lib/airtable';
 import { photographerFullName as resolvePhotographer, watermarkLine as resolveWatermark, photographerSlug, captionSource, rightsHolder as resolveRightsHolder } from '../../lib/photographers';
-import { repositoryByScanSource } from '../../lib/repositories';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
@@ -67,7 +66,6 @@ const watermarkLine = resolveWatermark(image?.photographerName ?? null);
 const captionSrc = captionSource(image?.photographerName ?? null);
 const photogSlug = photographerSlug(image?.photographerName ?? null);
 const rightsHolder = resolveRightsHolder(image?.photographerName ?? null);
-const sourceRepository = repositoryByScanSource(image?.scanSource ?? null);
 ---
 
 <html lang="en">
@@ -208,13 +206,13 @@ const sourceRepository = repositoryByScanSource(image?.scanSource ?? null);
             <div class="scan-credit">Source: {scanCredit}</div>
           )}
 
-          {(rightsHolder || sourceRepository) && (
+          {rightsHolder && (
             <div class="rights-repro">
-              {rightsHolder && (
-                <span><strong>Rights &amp; reproductions:</strong> {rightsHolder}.</span>
-              )}
-              {sourceRepository && (
-                <a class="rights-repro-link" href={`/repository/${sourceRepository.slug}`}>How to obtain copies →</a>
+              <span><strong>Rights &amp; reproductions:</strong> {rightsHolder}.</span>
+              {photogSlug && (
+                <a class="rights-repro-link" href={`/photographer/${photogSlug}#reproductions`}>
+                  How to obtain copies →
+                </a>
               )}
             </div>
           )}

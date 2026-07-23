@@ -1031,6 +1031,80 @@ a.chip-event:hover {
 }
 .repository-links a:hover { text-decoration: underline; }
 
+/* Collections held at a repository — one card per archive */
+.collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.collection-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px 24px;
+}
+.collection-card-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  line-height: 1.3;
+}
+.collection-card-title a { color: var(--ink); text-decoration: none; }
+.collection-card-title a:hover { color: var(--accent); }
+.collection-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-bottom: 10px;
+}
+.collection-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 2px 7px;
+  color: var(--ink-soft);
+}
+.collection-card-permission {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.collection-thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+}
+.collection-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--accent-soft);
+}
+.collection-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.collection-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 14px;
+}
+@media (max-width: 600px) {
+  .collection-thumbs { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* Browse pagination — "Show more" reveals the next page of tiles */
 .tile-hidden { display: none; }
 .show-more-wrap {
