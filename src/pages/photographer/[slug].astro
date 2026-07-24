@@ -121,13 +121,14 @@ const metaLine = photographer
                       </p>
                       {collection.licensing && (
                         <p class="intro-text">
-                          {collection.licensing.blurb}{' '}
-                          {collection.licensing.links.map((link, i) => (
-                            <>
-                              {i > 0 && <span> · </span>}
-                              <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
-                            </>
-                          ))}
+                          {(() => {
+                            const { blurb, link } = collection.licensing!;
+                            const i = blurb.indexOf(link.label);
+                            const anchor = <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>;
+                            return i === -1
+                              ? <>{blurb} {anchor}</>
+                              : <>{blurb.slice(0, i)}{anchor}{blurb.slice(i + link.label.length)}</>;
+                          })()}
                         </p>
                       )}
                     </>

@@ -52,7 +52,7 @@ export interface PhotographerCollection {
    * holding repository — e.g. a picture agency. Rendered as its own note in
    * the reproductions box.
    */
-  licensing?: { blurb: string; links: { label: string; url: string }[] };
+  licensing?: { blurb: string; link: { label: string; url: string } };
   /**
    * The repository's official credit line for this collection, VERBATIM — the
    * wording it supplies for media releases and publication (this is the form
@@ -78,7 +78,7 @@ const PHOTOGRAPHERS: Record<string, Photographer> = {
       licensing: {
         blurb:
           "Many of Herron's best-known images can also be licensed through Take Stock, the picture agency.",
-        links: [{ label: 'Take Stock', url: 'https://takestockphotos.com' }],
+        link: { label: 'Take Stock', url: 'https://takestockphotos.com' },
       },
       citation:
         'Matt Herron photography archive (M2866). Dept. of Special Collections and University Archives, Stanford University Libraries, Stanford, California',
