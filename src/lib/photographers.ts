@@ -18,6 +18,10 @@ export interface Photographer {
    * Stock, but permission is granted by the Estate of Matt Herron.
    */
   rightsHolder: string;
+  /** Optional website for the rights holder — links the name where it appears. */
+  rightsHolderUrl?: string;
+  /** Optional licensing / permissions contact email for the rights holder. */
+  rightsHolderEmail?: string;
   /**
    * The archive this photographer's work lives in at a holding repository.
    * This is the single source of truth for collection-level facts: the
@@ -84,7 +88,13 @@ const PHOTOGRAPHERS: Record<string, Photographer> = {
       ],
     },
   },
-  JM: { fullName: 'Jim Marshall', credit: 'Jim Marshall Photography LLC', rightsHolder: 'Jim Marshall Photography LLC' },
+  JM: {
+    fullName: 'Jim Marshall',
+    credit: 'Jim Marshall Photography LLC',
+    rightsHolder: 'Jim Marshall Photography LLC',
+    rightsHolderUrl: 'https://www.jimmarshallphotographyllc.com/',
+    rightsHolderEmail: 'licensing@jimmarshallphotographyllc.com',
+  },
 };
 
 /** Full display name for a photographer prefix; falls back to the raw prefix. */

@@ -95,7 +95,7 @@ const metaLine = photographer
               {/* Inside the bio column so it shares the bio's left and right edges. */}
               {(collection || config?.rightsHolder) && (
                 <div class="repository-request" id="reproductions">
-                  <h2 class="repository-request-title">Collection &amp; reproductions</h2>
+                  <h2 class="repository-request-title">{collection ? 'Collection & reproductions' : 'Reproductions'}</h2>
 
                   {collection ? (
                     <>
@@ -108,9 +108,15 @@ const metaLine = photographer
                           ? `holds ${collection.holdings}.`
                           : `holds ${photographer.name}'s negatives and contact sheets.`}
                         {config?.rightsHolder && (
-                          <> Permission to reproduce is granted by {config.rightsHolder}, while the
+                          <> Permission to reproduce is granted by{' '}
+                          {config.rightsHolderUrl
+                            ? <a href={config.rightsHolderUrl} target="_blank" rel="noopener noreferrer">{config.rightsHolder}</a>
+                            : config.rightsHolder}, while the
                           high-resolution file is supplied by the repository — a request generally needs
                           to reach both.</>
+                        )}
+                        {config?.rightsHolderEmail && (
+                          <> Licensing inquiries: <a href={`mailto:${config.rightsHolderEmail}`}>{config.rightsHolderEmail}</a>.</>
                         )}
                       </p>
                       {collection.licensing && (
@@ -127,7 +133,13 @@ const metaLine = photographer
                     </>
                   ) : (
                     <p class="intro-text">
-                      Permission to reproduce {photographer.name}'s work is granted by {config!.rightsHolder}.
+                      Permission to reproduce {photographer.name}'s work is granted by{' '}
+                      {config!.rightsHolderUrl
+                        ? <a href={config!.rightsHolderUrl} target="_blank" rel="noopener noreferrer">{config!.rightsHolder}</a>
+                        : config!.rightsHolder}.
+                      {config!.rightsHolderEmail && (
+                        <> Licensing inquiries: <a href={`mailto:${config!.rightsHolderEmail}`}>{config!.rightsHolderEmail}</a>.</>
+                      )}
                     </p>
                   )}
 
