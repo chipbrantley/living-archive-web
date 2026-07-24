@@ -1018,6 +1018,7 @@ a.chip-event:hover {
   margin: 0 0 8px;
 }
 .repository-request .intro-text { margin: 0; }
+.repository-request .intro-text + .intro-text { margin-top: 0.85em; }
 .repository-links {
   list-style: none;
   padding: 0;

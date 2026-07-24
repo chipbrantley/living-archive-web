@@ -98,7 +98,9 @@ const pageTitle = repository
 
             <div class="repository-request">
               <h2 class="repository-request-title">Access &amp; reproductions</h2>
-              <p class="intro-text">{repository.access}</p>
+              {repository.access.split(/\n+/).filter(Boolean).map((para) => (
+                <p class="intro-text">{para}</p>
+              ))}
             </div>
 
             {repository.links.length > 0 && (

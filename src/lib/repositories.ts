@@ -50,12 +50,15 @@ const REPOSITORIES: Repository[] = [
     scanSource: 'Stanford Special Collections',
     name: 'Stanford University Libraries — Special Collections',
     slug: 'stanford',
-    kind: 'Holding repository — original negatives, contact sheets, and high-resolution scans',
+    kind: 'Holding repository — original prints, negatives, contact sheets, and high-resolution scans',
     blurb:
-      "The Department of Special Collections and University Archives, Stanford University Libraries, holds several of the photographic archives represented in A Living Archive — including the negatives, contact sheets, and high-resolution digital scans behind them.",
+      "The Department of Special Collections and University Archives, Stanford University Libraries, holds several of the photographic archives represented in A Living Archive — including the prints, negatives, contact sheets, and high-resolution digital scans behind them.",
     access:
-      'Stanford holds the original negatives and contact sheets along with the high-resolution scans — considerably more material than appears here. Researchers who want to consult the originals on site, to see images beyond those shown here, or to obtain a high-resolution digital file should contact Stanford directly. Permission to reproduce an image is granted separately, by the rights holder of the particular collection, so a reproduction request generally needs to reach both. See the collection below for who grants permission for a given photographer’s work.',
-    links: [],
+      'Stanford holds the original prints, negatives, and contact sheets along with the high-resolution scans — considerably more material than appears here. Researchers who want to consult the originals on site, to see images beyond those shown here, or to obtain a high-resolution digital file should contact Stanford Special Collections (below). Permission to reproduce an image is granted separately, by the rights holder of the particular collection, so a reproduction request generally needs to reach both. See the collection below for who grants permission for a given photographer’s work.\n\nThe high-resolution scans shown from Stanford’s collections appear here courtesy of Stanford University Libraries.',
+    links: [
+      { label: 'Request copies — Stanford Special Collections', url: 'https://library.stanford.edu/special-collections-request-copies' },
+      { label: 'specialcollections@stanford.edu', url: 'mailto:specialcollections@stanford.edu' },
+    ],
   },
 ];
 

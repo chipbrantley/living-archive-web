@@ -98,20 +98,33 @@ const metaLine = photographer
                   <h2 class="repository-request-title">Collection &amp; reproductions</h2>
 
                   {collection ? (
-                    <p class="intro-text">
-                      {photographer.name}'s negatives, contact sheets, and high-resolution scans are
-                      held in the {collection.name}
-                      {collection.number ? ` (${collection.number})` : ''}
-                      {holdingRepository ? ' at ' : ''}
-                      {holdingRepository && (
-                        <a href={`/repository/${holdingRepository.slug}`}>{holdingRepository.name}</a>
-                      )}.
-                      {config?.rightsHolder && (
-                        <> Permission to reproduce is granted by {config.rightsHolder}, while the
-                        high-resolution file is supplied by the repository — a request generally needs
-                        to reach both.</>
+                    <>
+                      <p class="intro-text">
+                        {`The ${collection.name}${collection.number ? ` (${collection.number})` : ''} `}
+                        {holdingRepository && (
+                          <>at <a href={`/repository/${holdingRepository.slug}`}>{holdingRepository.name}</a>{' '}</>
+                        )}
+                        {collection.holdings
+                          ? `holds ${collection.holdings}.`
+                          : `holds ${photographer.name}'s negatives and contact sheets.`}
+                        {config?.rightsHolder && (
+                          <> Permission to reproduce is granted by {config.rightsHolder}, while the
+                          high-resolution file is supplied by the repository — a request generally needs
+                          to reach both.</>
+                        )}
+                      </p>
+                      {collection.licensing && (
+                        <p class="intro-text">
+                          {collection.licensing.blurb}{' '}
+                          {collection.licensing.links.map((link, i) => (
+                            <>
+                              {i > 0 && <span> · </span>}
+                              <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
+                            </>
+                          ))}
+                        </p>
                       )}
-                    </p>
+                    </>
                   ) : (
                     <p class="intro-text">
                       Permission to reproduce {photographer.name}'s work is granted by {config!.rightsHolder}.

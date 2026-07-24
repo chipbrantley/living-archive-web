@@ -37,6 +37,19 @@ export interface PhotographerCollection {
   /** Collection call number, e.g. "M2866". */
   number?: string;
   /**
+   * What the archive physically holds, from the repository's finding aid —
+   * e.g. "prints (including vintage prints), negatives, and contact sheets".
+   * Per-collection: another archive at the same repository holds different
+   * material.
+   */
+  holdings?: string;
+  /**
+   * An additional route for licensing this photographer's images, beyond the
+   * holding repository — e.g. a picture agency. Rendered as its own note in
+   * the reproductions box.
+   */
+  licensing?: { blurb: string; links: { label: string; url: string }[] };
+  /**
    * The repository's official credit line for this collection, VERBATIM — the
    * wording it supplies for media releases and publication (this is the form
    * the AP has used for Herron images). Per-collection, not per-repository:
@@ -56,6 +69,13 @@ const PHOTOGRAPHERS: Record<string, Photographer> = {
       repositorySlug: 'stanford',
       name: 'Matt Herron photography archive',
       number: 'M2866',
+      holdings:
+        "Matt Herron's prints (including vintage prints), negatives, and contact sheets, spanning his career from the 1950s through the 1990s",
+      licensing: {
+        blurb:
+          "Many of Herron's best-known images can also be licensed through Take Stock, the picture agency.",
+        links: [{ label: 'Take Stock', url: 'https://takestockphotos.com' }],
+      },
       citation:
         'Matt Herron photography archive (M2866). Dept. of Special Collections and University Archives, Stanford University Libraries, Stanford, California',
       links: [
