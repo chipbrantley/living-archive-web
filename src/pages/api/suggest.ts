@@ -80,7 +80,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
     ['Organizations', list(d.orgs).join('; ')],
   ].filter(([, v]) => v !== '') as Array<[string, string]>;
 
-  if (!/^\d{7}$/.test(imageNumber)) {
+  // Accept any image-number format in the archive — Herron's 7-digit Take Stock
+  // numbers, Marshall's estate numbers (e.g. "0004_02112_12"), and future
+  // photographers' schemes. This is a safety/sanity gate (charset + length),
+  // not an existence check: a well-formed but unknown number 404s below. The
+  // charset allowlist also keeps the value safe to interpolate into the
+  // Airtable formula (no quotes or backslashes get through).
+  if (!imageNumber || imageNumber.length > 60 || !/^[A-Za-z0-9 ._-]+$/.test(imageNumber)) {
     return ok({ error: 'Unknown image.' }, 400);
   }
   if (people.length === 0 && note === '' && fieldSuggestions.length === 0) {
