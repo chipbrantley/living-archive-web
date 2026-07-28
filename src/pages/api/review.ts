@@ -19,6 +19,8 @@ import {
   getIdentificationForReview,
   patchIdentification,
   patchSuggestion,
+  getSuggestionForReview,
+  applyApprovedSuggestion,
 } from '../../lib/airtableWrite';
 
 const ok = (body: unknown, status = 200) =>
@@ -81,6 +83,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
         action === 'approve' ? 'Approved' : action === 'table' ? 'Tabled' : action === 'reject' ? 'Rejected' : null;
       if (!status) return ok({ error: 'Unknown action.' }, 400);
       await patchSuggestion(id, { Status: status, Reviewer: [user.id], 'Reviewed on': today });
+      if (action === 'approve') {
+        // Phase 2: write the approved value onto the image. Best-effort — the
+        // approval stands even if the auto-apply can't place it.
+        try {
+          const s = await getSuggestionForReview(id);
+          const res = await applyApprovedSuggestion(s.imageId ?? '', s.fieldName, s.value);
+          return ok({ ok: true, applied: res.applied, detail: res.detail });
+        } catch (e) {
+          return ok({ ok: true, applied: false, detail: e instanceof Error ? e.message : 'Auto-apply failed.' });
+        }
+      }
     } else {
       return ok({ error: 'Unknown type.' }, 400);
     }

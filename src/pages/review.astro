@@ -167,7 +167,14 @@ const totalPending = queue.identifications.length + queue.suggestions.length;
               (card.querySelector('.review-actions') as HTMLElement).style.display = 'none';
               const s = statusEl as HTMLElement;
               s.hidden = false;
-              s.textContent = (LABEL[action] || 'Done') + ' ✓';
+              let label = (LABEL[action] || 'Done') + ' ✓';
+              // When approving a fact, say whether it landed on the image or
+              // still needs a hand.
+              if (type === 'suggestion' && action === 'approve' && data.applied === false) {
+                label = 'Approved — apply by hand';
+                s.title = data.detail || '';
+              }
+              s.textContent = label;
               card.classList.add('review-card--done');
             } catch (e) {
               const s = statusEl as HTMLElement;
