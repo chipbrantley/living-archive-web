@@ -267,6 +267,9 @@ export async function fetchImageChips(
     const idData = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
     const personIds: { id: string; verified: boolean; on: string | null; by: string | null }[] = [];
     for (const r of idData.records ?? []) {
+      // A rejected identification ("Not this person") must never render as a
+      // chip, even if a Person link still lingers on the row.
+      if (r.fields['Verification status'] === 'Not this person') continue;
       const pid = (r.fields['Person'] ?? [])[0];
       if (pid) {
         personIds.push({
@@ -766,6 +769,8 @@ export async function fetchPeopleWithImages(peopleIds: string[]): Promise<Person
       const formula = `OR(${chunk.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
       const data = await airtable('/Identifications', { filterByFormula: formula, pageSize: '100' });
       for (const r of data.records ?? []) {
+        // Don't surface an image on a person's page from a rejected ID.
+        if (r.fields['Verification status'] === 'Not this person') continue;
         for (const imgId of r.fields['Image'] ?? []) {
           if (!imageIds.includes(imgId)) imageIds.push(imgId);
         }
