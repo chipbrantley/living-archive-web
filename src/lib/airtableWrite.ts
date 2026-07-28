@@ -226,6 +226,24 @@ async function approvedLocationAttrs(imageId: string): Promise<{ state?: string;
 
 const countyPlaceName = (v: string) => (/county|parish|region/i.test(v) ? v : `${v} County`);
 
+/** Drop any State-type place from an image once a more specific place is linked. */
+async function removeStatePlaceLinks(imageId: string): Promise<void> {
+  const img = await airtableRecord(IMAGES_TABLE, imageId);
+  const placeIds = (img.fields?.['Places'] ?? []) as string[];
+  if (placeIds.length < 2) return;
+  const keep: string[] = [];
+  let removed = false;
+  for (const pid of placeIds) {
+    const place = await airtableRecord(PLACES_TABLE, pid);
+    if (String(place.fields?.['Type'] ?? '') === 'State') {
+      removed = true;
+      continue;
+    }
+    keep.push(pid);
+  }
+  if (removed) await airtableWrite(`/${IMAGES_TABLE}/${imageId}`, 'PATCH', { fields: { Places: keep } });
+}
+
 /** Image id + field + value for an approved suggestion, so it can be applied. */
 export async function getSuggestionForReview(
   id: string
@@ -277,23 +295,33 @@ export async function applyApprovedSuggestion(
     const placeName = fieldName === 'County' ? countyPlaceName(v) : v;
     const pid = await findOrCreateNamed(PLACES_TABLE, placeName, extra);
     await addImageLinks(imageId, 'Places', [pid]);
+    // A specific place supersedes a bare state chip — the state now lives as
+    // the place's attribute, so drop any State-type place from the image.
+    await removeStatePlaceLinks(imageId);
     return { applied: true };
   }
 
   if (fieldName === 'State') {
-    // Fill State on linked places that lack one — never overwrite (Places are
-    // shared vocabulary; a wrong overwrite would follow the place everywhere).
     const img = await airtableRecord(IMAGES_TABLE, imageId);
     const placeIds = (img.fields?.['Places'] ?? []) as string[];
-    let filled = 0;
+    let hasSpecific = false;
     for (const pid of placeIds) {
       const place = await airtableRecord(PLACES_TABLE, pid);
-      if (!String(place.fields?.['State'] ?? '').trim()) {
-        await airtableWrite(`/${PLACES_TABLE}/${pid}`, 'PATCH', { fields: { State: v } });
-        filled++;
+      const ptype = String(place.fields?.['Type'] ?? '');
+      if (ptype && ptype !== 'State') {
+        hasSpecific = true;
+        // Fill an empty state; never overwrite (Places are shared vocabulary).
+        if (!String(place.fields?.['State'] ?? '').trim()) {
+          await airtableWrite(`/${PLACES_TABLE}/${pid}`, 'PATCH', { fields: { State: v } });
+        }
       }
     }
-    return filled > 0 ? { applied: true } : { applied: false, detail: 'No linked place needs a state yet.' };
+    if (hasSpecific) return { applied: true };
+    // No specific place yet — link a state-level place so the image is findable
+    // by state (e.g. a "photos from Mississippi" view) before a town is known.
+    const pid = await findOrCreateNamed(PLACES_TABLE, v, { Type: 'State', State: v });
+    await addImageLinks(imageId, 'Places', [pid]);
+    return { applied: true };
   }
 
   // Description, Editorial notes, Original caption, Date notes, Credit line,
