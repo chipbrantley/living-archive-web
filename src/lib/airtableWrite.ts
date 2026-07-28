@@ -63,6 +63,10 @@ export async function createIdentification(
     fields: {
       Image: [imageRecId],
       ...(person.id ? { Person: [person.id] } : {}),
+      // Always record the typed name so the row is legible during review even
+      // when no People record is linked yet (a proposed new person). Without
+      // this, a new-person identification shows a blank Person cell.
+      'Proposed name': person.name,
       'Suggested by': [userRecId],
       'Suggested on': dateISO,
       'Verification status': 'Unverified',
