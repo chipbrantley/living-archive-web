@@ -2,9 +2,11 @@
 // Signed-in indicator for the masthead. Reads the user the gate attached
 // to locals. Renders nothing when there's no user (e.g. the sign-in page).
 const user = Astro.locals.user;
+const isReviewer = !!user && (user.role === 'Admin' || user.role === 'Verifier');
 ---
 {user && (
   <div class="user-menu">
+    {isReviewer && <a class="user-menu-link" href="/review">Review</a>}
     <span class="user-menu-name">{user.name || user.email}</span>
     <form method="post" action="/api/auth/signout">
       <button type="submit" class="user-menu-signout">Sign out</button>

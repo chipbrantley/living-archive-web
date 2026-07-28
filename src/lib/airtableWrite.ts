@@ -10,6 +10,7 @@ const BASE_ID = import.meta.env.AIRTABLE_BASE_ID;
 const USERS_TABLE = 'Users';
 const SUGGESTIONS_TABLE = 'Suggestions';
 const IDENTIFICATIONS_TABLE = 'Identifications';
+const PEOPLE_TABLE = 'People';
 
 function assertConfigured(): void {
   if (!WRITE_PAT) {
@@ -100,4 +101,49 @@ export async function createFieldSuggestion(
       Status: 'Pending',
     },
   });
+}
+
+// ── Review actions (admin review page) ──────────────────────────────────────
+
+/**
+ * Find a People record by exact (case-insensitive) name, or create one.
+ * Used when verifying an identification for a person not yet in the archive.
+ * Matching on name keeps a repeated new-person name from spawning duplicates.
+ */
+export async function findOrCreatePerson(name: string): Promise<string> {
+  const clean = name.trim();
+  if (!clean) throw new Error('Cannot create a person with an empty name.');
+  const safe = clean.replace(/'/g, "\\'");
+  const found = await airtableWrite(`/${PEOPLE_TABLE}`, 'GET', undefined, {
+    filterByFormula: `LOWER({Name})=LOWER('${safe}')`,
+    maxRecords: '1',
+  });
+  if (found.records?.length) return found.records[0].id;
+  const created = await airtableWrite(`/${PEOPLE_TABLE}`, 'POST', { fields: { Name: clean } });
+  return created.id;
+}
+
+/** The current Person link + Proposed name for an identification. */
+export async function getIdentificationForReview(
+  id: string
+): Promise<{ personId: string | null; proposedName: string | null }> {
+  const rec = await airtableWrite(`/${IDENTIFICATIONS_TABLE}/${id}`, 'GET');
+  return {
+    personId: (rec.fields?.['Person'] ?? [])[0] ?? null,
+    proposedName: rec.fields?.['Proposed name'] ?? null,
+  };
+}
+
+export async function patchIdentification(
+  id: string,
+  fields: Record<string, unknown>
+): Promise<void> {
+  await airtableWrite(`/${IDENTIFICATIONS_TABLE}/${id}`, 'PATCH', { fields });
+}
+
+export async function patchSuggestion(
+  id: string,
+  fields: Record<string, unknown>
+): Promise<void> {
+  await airtableWrite(`/${SUGGESTIONS_TABLE}/${id}`, 'PATCH', { fields });
 }

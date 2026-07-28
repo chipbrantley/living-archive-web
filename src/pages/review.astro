@@ -1,0 +1,184 @@
+---
+import '../styles/global.css';
+import UserMenu from '../components/UserMenu.astro';
+import { fetchReviewQueue, prettyDate } from '../lib/airtable';
+import type { ReviewQueue } from '../lib/airtable';
+
+const user = Astro.locals.user;
+const isReviewer = !!user && (user.role === 'Admin' || user.role === 'Verifier');
+
+let queue: ReviewQueue = { identifications: [], suggestions: [] };
+let error: string | null = null;
+if (isReviewer) {
+  try {
+    queue = await fetchReviewQueue();
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Failed to load the review queue.';
+  }
+}
+
+const totalPending = queue.identifications.length + queue.suggestions.length;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Review queue — Living Archive</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="brand" href="/"><span class="brand-title">Living Archive</span></a>
+        <UserMenu />
+      </div>
+    </header>
+
+    <nav class="breadcrumb">
+      <a href="/">Browse</a>
+      <span class="sep">›</span>
+      <span>Review queue</span>
+    </nav>
+
+    <div class="page">
+      {!isReviewer && (
+        <div class="card">
+          <h1 class="title">Review queue</h1>
+          <p>This page is for archive reviewers. If you think you should have access, let us know.</p>
+        </div>
+      )}
+
+      {isReviewer && (
+        <>
+          <section class="intro repository-intro">
+            <h1 class="intro-title">Review queue</h1>
+            <div class="place-line">
+              {totalPending === 0 ? 'Nothing waiting — all caught up.' : `${totalPending} item${totalPending === 1 ? '' : 's'} awaiting review`}
+            </div>
+          </section>
+
+          {error && (
+            <div class="card"><div class="error-card"><strong>Couldn't load the queue.</strong><pre>{error}</pre></div></div>
+          )}
+
+          {/* People to review */}
+          <section class="section">
+            <div class="browse-header">
+              <h2 class="browse-title">People</h2>
+              <span class="browse-count">{queue.identifications.length}</span>
+            </div>
+            {queue.identifications.length === 0 && <p class="review-empty">No people awaiting review.</p>}
+            <div class="review-list">
+              {queue.identifications.map((it) => (
+                <article class="review-card" data-type="identification" data-id={it.id}>
+                  <a class="review-thumb" href={`/image/${it.imageNumber}`} target="_blank" rel="noopener">
+                    {it.thumbUrl
+                      ? <img src={it.thumbUrl} alt={`Image ${it.imageNumber}`} loading="lazy" />
+                      : <span class="review-thumb-empty">{it.imageNumber}</span>}
+                  </a>
+                  <div class="review-body">
+                    <h3 class="review-name">{it.proposedName || '(no name given)'}</h3>
+                    <div class="review-meta">
+                      <span class="review-pill">{it.personLinked ? 'existing person' : 'new name'}</span>
+                      {it.status === 'Possible' && <span class="review-pill review-pill--possible">Possible</span>}
+                      <span>Image {it.imageNumber}</span>
+                      {it.submitter && <span>· by {it.submitter}</span>}
+                      {it.on && <span>· {prettyDate(it.on)}</span>}
+                    </div>
+                    <div class="review-actions">
+                      <button class="review-btn review-btn--yes" data-action="verify">Verify</button>
+                      <button class="review-btn" data-action="possible">Possible</button>
+                      <button class="review-btn review-btn--no" data-action="reject">Not this person</button>
+                    </div>
+                  </div>
+                  <div class="review-status" hidden></div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {/* Facts to review */}
+          <section class="section">
+            <div class="browse-header">
+              <h2 class="browse-title">Facts</h2>
+              <span class="browse-count">{queue.suggestions.length}</span>
+            </div>
+            {queue.suggestions.length === 0 && <p class="review-empty">No facts awaiting review.</p>}
+            <div class="review-list">
+              {queue.suggestions.map((sg) => (
+                <article class="review-card" data-type="suggestion" data-id={sg.id}>
+                  <a class="review-thumb" href={`/image/${sg.imageNumber}`} target="_blank" rel="noopener">
+                    {sg.thumbUrl
+                      ? <img src={sg.thumbUrl} alt={`Image ${sg.imageNumber}`} loading="lazy" />
+                      : <span class="review-thumb-empty">{sg.imageNumber}</span>}
+                  </a>
+                  <div class="review-body">
+                    <h3 class="review-name"><span class="review-field">{sg.fieldName}:</span> {sg.proposedValue}</h3>
+                    <div class="review-meta">
+                      <span>Image {sg.imageNumber}</span>
+                      {sg.submitter && <span>· by {sg.submitter}</span>}
+                      {sg.on && <span>· {prettyDate(sg.on)}</span>}
+                    </div>
+                    <div class="review-actions">
+                      <button class="review-btn review-btn--yes" data-action="approve">Approve</button>
+                      <button class="review-btn" data-action="table">Table</button>
+                      <button class="review-btn review-btn--no" data-action="reject">Reject</button>
+                    </div>
+                  </div>
+                  <div class="review-status" hidden></div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+
+    <footer class="footer">
+      <div class="footer-brand">Living Archive</div>
+      <div class="footer-meta">
+        <span>© 2026 Proximity Partners</span>
+        <span class="footer-dot">·</span>
+        <a href="mailto:chip@proximitypartnership.com">Contact</a>
+      </div>
+    </footer>
+
+    <script>
+      const LABEL = {
+        verify: 'Verified', possible: 'Marked possible', reject: 'Rejected',
+        approve: 'Approved', table: 'Tabled',
+      };
+      document.querySelectorAll('.review-card').forEach((card) => {
+        const type = card.getAttribute('data-type');
+        const id = card.getAttribute('data-id');
+        const statusEl = card.querySelector('.review-status');
+        card.querySelectorAll('.review-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const action = btn.getAttribute('data-action');
+            card.querySelectorAll('.review-btn').forEach((b) => ((b as HTMLButtonElement).disabled = true));
+            try {
+              const res = await fetch('/api/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, id, action }),
+              });
+              const data = await res.json();
+              if (!res.ok || data.error) throw new Error(data.error || 'Something went wrong.');
+              (card.querySelector('.review-actions') as HTMLElement).style.display = 'none';
+              const s = statusEl as HTMLElement;
+              s.hidden = false;
+              s.textContent = (LABEL[action] || 'Done') + ' ✓';
+              card.classList.add('review-card--done');
+            } catch (e) {
+              const s = statusEl as HTMLElement;
+              s.hidden = false;
+              s.classList.add('review-status--error');
+              s.textContent = e.message;
+              card.querySelectorAll('.review-btn').forEach((b) => ((b as HTMLButtonElement).disabled = false));
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

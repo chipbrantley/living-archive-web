@@ -1055,6 +1055,89 @@ a.chip-event:hover {
   color: var(--ink);
 }
 
+/* Admin review queue */
+.review-empty { color: var(--ink-faint); font-size: 14px; margin: 4px 0 0; }
+.review-list { display: flex; flex-direction: column; gap: 12px; }
+.review-card {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.review-card--done { opacity: 0.55; }
+.review-thumb {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 72px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.review-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.review-thumb-empty { font-size: 11px; color: var(--ink-faint); padding: 4px; text-align: center; }
+.review-body { flex: 1 1 auto; min-width: 0; }
+.review-name {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  line-height: 1.3;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.review-field { color: var(--ink-faint); font-weight: 600; }
+.review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+.review-pill {
+  font-size: 11px;
+  background: var(--accent-soft);
+  color: var(--ink-soft);
+  border-radius: 4px;
+  padding: 1px 7px;
+}
+.review-pill--possible { background: #dbe7f5; color: #3a5570; }
+.review-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.review-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.review-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.review-btn:disabled { opacity: 0.5; cursor: default; }
+.review-btn--yes { border-color: #3f7a4f; color: #2f5f3c; }
+.review-btn--yes:hover:not(:disabled) { background: #e6f1e8; border-color: #3f7a4f; }
+.review-btn--no { border-color: #b06a5b; color: #8a4636; }
+.review-btn--no:hover:not(:disabled) { background: #f6e7e2; border-color: #b06a5b; }
+.review-status {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2f5f3c;
+}
+.review-status--error { color: #8a4636; font-weight: 500; }
+@media (max-width: 560px) {
+  .review-card { flex-wrap: wrap; }
+  .review-thumb { width: 100%; height: 120px; }
+}
+
 /* Collections held at a repository — one card per archive */
 .collection-list {
   display: flex;
@@ -1286,6 +1369,14 @@ a.chip-event:hover {
   color: var(--ink-faint);
 }
 .user-menu-name { white-space: nowrap; }
+.user-menu-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.user-menu-link:hover { text-decoration: underline; }
 .user-menu-signout {
   background: transparent;
   border: 1px solid var(--border-strong);

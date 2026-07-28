@@ -805,6 +805,111 @@ export async function fetchImagesByIds(ids: string[]): Promise<AirtableImage[]> 
   return images;
 }
 
+// ── Admin review queue ──────────────────────────────────────────────────────
+
+export interface ReviewIdentification {
+  id: string;
+  imageNumber: string;
+  thumbUrl: string | null;
+  proposedName: string;
+  status: string; // 'Unverified' | 'Possible'
+  personLinked: boolean;
+  submitter: string | null;
+  on: string | null;
+}
+export interface ReviewSuggestion {
+  id: string;
+  imageNumber: string;
+  thumbUrl: string | null;
+  fieldName: string;
+  proposedValue: string;
+  submitter: string | null;
+  on: string | null;
+}
+export interface ReviewQueue {
+  identifications: ReviewIdentification[];
+  suggestions: ReviewSuggestion[];
+}
+
+/**
+ * Everything awaiting review: identifications not yet settled (Unverified or
+ * Possible) and field suggestions still Pending. Images and submitter names are
+ * resolved in batch so the page renders in a handful of requests.
+ */
+export async function fetchReviewQueue(): Promise<ReviewQueue> {
+  const [idData, sgData] = await Promise.all([
+    airtable('/Identifications', {
+      filterByFormula: `OR({Verification status}='Unverified',{Verification status}='Possible')`,
+      pageSize: '100',
+    }),
+    airtable('/Suggestions', {
+      filterByFormula: `{Status}='Pending'`,
+      pageSize: '100',
+    }),
+  ]);
+
+  const idRows = (idData.records ?? []).map((r: any) => ({
+    id: r.id,
+    imageId: (r.fields['Image'] ?? [])[0] ?? null,
+    proposedName: r.fields['Proposed name'] ?? '',
+    status: r.fields['Verification status'] ?? 'Unverified',
+    personLinked: (r.fields['Person'] ?? []).length > 0,
+    submitterId: (r.fields['Suggested by'] ?? [])[0] ?? null,
+    on: r.fields['Suggested on'] ?? null,
+  }));
+  const sgRows = (sgData.records ?? []).map((r: any) => ({
+    id: r.id,
+    imageId: (r.fields['Image'] ?? [])[0] ?? null,
+    fieldName: r.fields['Field name'] ?? '',
+    proposedValue: r.fields['Proposed value'] ?? '',
+    submitterId: (r.fields['Submitter'] ?? [])[0] ?? null,
+    on: r.fields['Submitted on'] ?? null,
+  }));
+
+  const imageIds = [...new Set([...idRows, ...sgRows].map((x) => x.imageId).filter(Boolean))] as string[];
+  const userIds = [...new Set([...idRows, ...sgRows].map((x) => x.submitterId).filter(Boolean))] as string[];
+
+  const imageMap: Record<string, { number: string; thumb: string | null }> = {};
+  if (imageIds.length) {
+    const imgs = await fetchImagesByIds(imageIds);
+    for (const img of imgs) {
+      imageMap[img.id] = { number: img.imageNumber, thumb: img.imageFile?.displayUrl ?? null };
+    }
+  }
+  const userMap: Record<string, string> = {};
+  for (let i = 0; i < userIds.length; i += 50) {
+    const chunk = userIds.slice(i, i + 50);
+    const f = `OR(${chunk.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const u = await airtable('/Users', { filterByFormula: f, pageSize: '100' });
+    for (const r of u.records ?? []) userMap[r.id] = r.fields['Name'] ?? r.fields['Email'] ?? 'Someone';
+  }
+
+  const resolveImg = (imageId: string | null) => ({
+    imageNumber: imageId ? imageMap[imageId]?.number ?? '' : '',
+    thumbUrl: imageId ? imageMap[imageId]?.thumb ?? null : null,
+  });
+
+  return {
+    identifications: idRows.map((x) => ({
+      id: x.id,
+      ...resolveImg(x.imageId),
+      proposedName: x.proposedName,
+      status: x.status,
+      personLinked: x.personLinked,
+      submitter: x.submitterId ? userMap[x.submitterId] ?? null : null,
+      on: x.on,
+    })),
+    suggestions: sgRows.map((x) => ({
+      id: x.id,
+      ...resolveImg(x.imageId),
+      fieldName: x.fieldName,
+      proposedValue: x.proposedValue,
+      submitter: x.submitterId ? userMap[x.submitterId] ?? null : null,
+      on: x.on,
+    })),
+  };
+}
+
 /** All images whose "Scan source" matches a given repository value (with a file). */
 export async function fetchImagesByScanSource(scanSource: string): Promise<AirtableImage[]> {
   const escaped = scanSource.replace(/'/g, "\\'");
