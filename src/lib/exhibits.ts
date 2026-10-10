@@ -33,7 +33,7 @@ const PROOF_POSITIVE: Exhibit = {
   itemCount: 51,
   blurb: `Proof Positive is the first Living Archive exhibition in Mississippi — Civil Rights–era photographs drawn from the archives of five photographers: Matt Herron, Jim Marshall, Jim Peppler, Tamio Wakayama, and Bob Fitch. Many have never been printed or publicly seen.
 
-Blown up from the photographers' own contact sheets — the "proofs" a photographer studies to choose a frame — the show turns the act of looking into an act of remembering.
+Blown up from the photographers' own contact sheets, the show turns the act of looking into an act of remembering.
 
 If you recognize someone, tell us. Every name, place, or story you add helps return these photographs to the people and communities who lived this history.`,
 };
