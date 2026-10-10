@@ -16,10 +16,17 @@ const PUBLIC_PATHS = new Set([
   '/auth/callback',
   '/api/auth/signin',
   '/api/auth/signout',
+  // Public exhibit contribution endpoint (museum visitors have no accounts).
+  '/api/exhibit-suggest',
 ]);
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
+  // The siloed public exhibit: the /jackson26 landing and its item pages are
+  // open to the world (the printed QR codes point here) while the rest of the
+  // archive stays invite-only. These pages carry noindex, so "public" here
+  // means reachable-by-URL, not broadly discoverable.
+  if (pathname === '/jackson26' || pathname.startsWith('/jackson26/')) return true;
   // Static assets served by Netlify normally skip middleware, but guard anyway.
   return (
     pathname.startsWith('/_astro/') ||

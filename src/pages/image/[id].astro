@@ -5,6 +5,7 @@ import { fetchImageByNumber, fetchImageChips, prettyDate } from '../../lib/airta
 import type { AirtableImage, PersonChip, PlaceChip, EventChip, OrgChip, LogEntry } from '../../lib/airtable';
 import { photographerFullName as resolvePhotographer, watermarkLine as resolveWatermark, photographerSlug, captionSource, rightsHolder as resolveRightsHolder, collectionFor } from '../../lib/photographers';
 import { repositoryByScanSource } from '../../lib/repositories';
+import { exhibitForImage, showExhibitNumber } from '../../lib/exhibits';
 
 const { id } = Astro.params;
 const imageId = id ?? '';
@@ -81,6 +82,7 @@ const watermarkLine = resolveWatermark(image?.photographerName ?? null);
 const captionSrc = captionSource(image?.photographerName ?? null);
 const photogSlug = photographerSlug(image?.photographerName ?? null);
 const rightsHolder = resolveRightsHolder(image?.photographerName ?? null);
+const exhibit = exhibitForImage(image?.proofPositiveNumber ?? null);
 ---
 
 <html lang="en">
@@ -229,6 +231,15 @@ const rightsHolder = resolveRightsHolder(image?.photographerName ?? null);
                   How to obtain copies →
                 </a>
               )}
+            </div>
+          )}
+
+          {exhibit && image.proofPositiveNumber && (
+            <div class="exhibited-line">
+              <a href={`/jackson26/${image.proofPositiveNumber}`}>
+                Exhibited in {exhibit.name} ({exhibit.city.split(',')[0]}, 2026) →
+              </a>
+              {showExhibitNumber(exhibit) && <span class="exhibited-no"> · No. {image.proofPositiveNumber}</span>}
             </div>
           )}
 

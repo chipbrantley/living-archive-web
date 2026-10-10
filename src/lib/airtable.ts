@@ -68,6 +68,8 @@ export interface AirtableImage {
   dateTaken: string | null;
   displayCaption: string | null;
   scanSource: string | null;
+  proofPositiveNumber: number | null;
+  contactSheet: boolean;
 }
 
 export interface AirtablePrint {
@@ -91,6 +93,28 @@ export async function fetchImageByNumber(imageNumber: string): Promise<AirtableI
   });
   if (!data.records?.length) return null;
   return mapImageRecord(data.records[0]);
+}
+
+/** The exhibit item at a given "Proof Positive #" (the QR/card number). */
+export async function fetchExhibitItemByNumber(n: number): Promise<AirtableImage | null> {
+  if (!Number.isInteger(n) || n < 1) return null;
+  const data = await airtable('/Images', {
+    filterByFormula: `{Proof Positive #}=${n}`,
+    maxRecords: '1',
+  });
+  if (!data.records?.length) return null;
+  return mapImageRecord(data.records[0]);
+}
+
+/** All exhibit items (any image with a Proof Positive #), ordered by number. */
+export async function fetchExhibitItems(): Promise<AirtableImage[]> {
+  const data = await airtable('/Images', {
+    filterByFormula: `{Proof Positive #}>0`,
+    pageSize: '100',
+  });
+  const items = (data.records ?? []).map(mapImageRecord).filter((i) => i.imageFile);
+  items.sort((a, b) => (a.proofPositiveNumber ?? 0) - (b.proofPositiveNumber ?? 0));
+  return items;
 }
 
 /**
@@ -182,6 +206,8 @@ function mapImageRecord(r: any): AirtableImage {
     dateTaken: r.fields['Date taken'] ?? null,
     displayCaption: r.fields['Display caption'] ?? null,
     scanSource: r.fields['Scan source'] ?? null,
+    proofPositiveNumber: r.fields['Proof Positive #'] ?? null,
+    contactSheet: r.fields['Contact sheet'] === true,
   };
 }
 

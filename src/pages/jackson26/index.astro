@@ -1,0 +1,64 @@
+---
+import '../../styles/global.css';
+import { fetchExhibitItems } from '../../lib/airtable';
+import type { AirtableImage } from '../../lib/airtable';
+import { watermarkLine, photographerFullName } from '../../lib/photographers';
+import { PROOF_POSITIVE } from '../../lib/exhibits';
+
+let items: AirtableImage[] = [];
+let error: string | null = null;
+try {
+  items = await fetchExhibitItems();
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Could not load the exhibit.';
+}
+
+const paragraphs = PROOF_POSITIVE.blurb.split(/\n{2,}/).filter(Boolean);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Proof Positive — A Living Archive</title>
+  </head>
+  <body class="exhibit-body">
+    <header class="exhibit-header">
+      <span class="exhibit-wordmark">Proof Positive</span>
+      <span class="exhibit-sub">A Living Archive · Smith Robertson Museum</span>
+    </header>
+
+    <main class="exhibit-main">
+      <section class="exhibit-intro">
+        <h1 class="exhibit-title">Proof Positive</h1>
+        <div class="exhibit-dates">Smith Robertson Museum · Jackson, Mississippi · October 26 – December 31, 2026</div>
+        {paragraphs.map((p) => <p class="exhibit-blurb">{p}</p>)}
+      </section>
+
+      {error && <div class="exhibit-notfound"><p>{error}</p></div>}
+
+      {items.length > 0 && (
+        <section class="exhibit-grid-section">
+          <h2 class="exhibit-grid-title">The photographs</h2>
+          <div class="exhibit-grid">
+            {items.map((it) => (
+              <a class="exhibit-tile" href={`/jackson26/${it.proofPositiveNumber}`}>
+                <div class="exhibit-tile-img">
+                  {it.imageFile && <img src={it.imageFile.displayUrl} alt={it.caption ?? `Item ${it.proofPositiveNumber}`} loading="lazy" />}
+                  <span class="exhibit-tile-no">No. {it.proofPositiveNumber}</span>
+                </div>
+                <div class="exhibit-tile-photog">{photographerFullName(it.photographerName)}</div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+    </main>
+
+    <footer class="exhibit-footer">
+      <span>Proof Positive · Smith Robertson Museum, Jackson · 2026</span>
+      <span>© 2026 Proximity Partners · <a href="mailto:chip@proximitypartnership.com">Contact</a></span>
+    </footer>
+  </body>
+</html>

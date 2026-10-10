@@ -1,0 +1,167 @@
+---
+import '../../styles/global.css';
+import { fetchExhibitItemByNumber, prettyDate } from '../../lib/airtable';
+import type { AirtableImage } from '../../lib/airtable';
+import { watermarkLine, photographerFullName } from '../../lib/photographers';
+import { PROOF_POSITIVE, showExhibitNumber } from '../../lib/exhibits';
+
+const raw = Astro.params.n ?? '';
+const n = /^\d{1,3}$/.test(raw) ? parseInt(raw, 10) : NaN;
+
+let item: AirtableImage | null = null;
+if (Number.isInteger(n) && n >= 1 && n <= PROOF_POSITIVE.itemCount) {
+  try {
+    item = await fetchExhibitItemByNumber(n);
+  } catch {
+    item = null;
+  }
+}
+
+const photog = item ? photographerFullName(item.photographerName) : null;
+const caption = item ? (item.displayCaption ?? item.caption) : null;
+const showNumber = showExhibitNumber(PROOF_POSITIVE);
+const pageTitle = item
+  ? `No. ${n} — Proof Positive`
+  : 'Exhibit item not found — Proof Positive';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{pageTitle}</title>
+  </head>
+  <body class="exhibit-body">
+    <header class="exhibit-header">
+      <a class="exhibit-wordmark" href="/jackson26">Proof Positive</a>
+      <span class="exhibit-sub">A Living Archive · Smith Robertson Museum</span>
+    </header>
+
+    <main class="exhibit-main">
+      {!item && (
+        <div class="exhibit-notfound">
+          <h1>We couldn't find that item.</h1>
+          <p>Double-check the number on the card, or <a href="/jackson26">see the whole exhibit</a>.</p>
+        </div>
+      )}
+
+      {item && (
+        <>
+          <figure class="exhibit-figure">
+            {item.imageFile
+              ? <img class="exhibit-image" src={item.imageFile.displayUrl} alt={caption ?? `Proof Positive, item ${n}`} />
+              : <div class="exhibit-image exhibit-image--missing">Image coming soon</div>}
+            {item.imageFile && (
+              <figcaption class="exhibit-watermark">{watermarkLine(item.photographerName)}</figcaption>
+            )}
+          </figure>
+
+          <div class="exhibit-meta">
+            {showNumber && <div class="exhibit-number">No. {n}</div>}
+            {photog && <div class="exhibit-photog">{photog}</div>}
+            {item.dateTaken && <div class="exhibit-date">{prettyDate(item.dateTaken)}</div>}
+            {caption && <p class="exhibit-caption">{caption}</p>}
+          </div>
+
+          {item.contactSheet && (
+            <p class="exhibit-sheetnote">
+              This is a <strong>contact sheet</strong> — a full roll of frames. If you recognize
+              someone, tell us who, and roughly where on the sheet (which row or frame).
+            </p>
+          )}
+
+          <section class="exhibit-contrib" id="contrib">
+            <h2 class="exhibit-contrib-title">Help us learn about this photograph</h2>
+            <p class="exhibit-contrib-sub">
+              Do you recognize someone? Were you there, or do you know someone who was?
+              Every detail helps return these photographs to the people who lived this history.
+            </p>
+
+            <form id="exhibit-form" class="exhibit-form" novalidate>
+              <input type="hidden" name="n" value={String(n)} />
+              {/* Honeypot — hidden from people, bots fill it. */}
+              <div class="exhibit-hp" aria-hidden="true">
+                <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+              </div>
+
+              <label class="exhibit-label" for="people">Who is this?</label>
+              <textarea id="people" name="people" rows="2" class="exhibit-input"
+                placeholder="A name, a nickname, a family connection. One per line."></textarea>
+
+              <label class="exhibit-label" for="note">What else can you tell us?</label>
+              <textarea id="note" name="note" rows="4" class="exhibit-input"
+                placeholder="Where, when, what was happening. Anything helps."></textarea>
+
+              <div class="exhibit-you">
+                <div>
+                  <label class="exhibit-label" for="visitorName">Your name <span>(optional)</span></label>
+                  <input id="visitorName" name="visitorName" type="text" class="exhibit-input" autocomplete="name" />
+                </div>
+                <div>
+                  <label class="exhibit-label" for="visitorContact">Phone or email <span>(optional)</span></label>
+                  <input id="visitorContact" name="visitorContact" type="text" class="exhibit-input" autocomplete="off" />
+                </div>
+              </div>
+
+              <button type="submit" class="exhibit-submit">Submit</button>
+              <div class="exhibit-form-msg" id="form-msg" hidden></div>
+            </form>
+          </section>
+        </>
+      )}
+    </main>
+
+    <footer class="exhibit-footer">
+      <span>Proof Positive · Smith Robertson Museum, Jackson · 2026</span>
+      <span>© 2026 Proximity Partners · <a href="mailto:chip@proximitypartnership.com">Contact</a></span>
+    </footer>
+
+    <script>
+      const form = document.getElementById('exhibit-form') as HTMLFormElement | null;
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const msg = document.getElementById('form-msg') as HTMLElement;
+          const btn = form.querySelector('.exhibit-submit') as HTMLButtonElement;
+          const fd = new FormData(form);
+          const people = String(fd.get('people') || '')
+            .split(/[\n;]+/).map((s) => s.trim()).filter(Boolean);
+          const payload = {
+            n: Number(fd.get('n')),
+            people,
+            note: String(fd.get('note') || ''),
+            visitorName: String(fd.get('visitorName') || ''),
+            visitorContact: String(fd.get('visitorContact') || ''),
+            website: String(fd.get('website') || ''),
+          };
+          if (people.length === 0 && !payload.note.trim()) {
+            msg.hidden = false;
+            msg.className = 'exhibit-form-msg exhibit-form-msg--err';
+            msg.textContent = 'Add a name or a note first.';
+            return;
+          }
+          btn.disabled = true;
+          btn.textContent = 'Submitting…';
+          try {
+            const res = await fetch('/api/exhibit-suggest', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Something went wrong.');
+            form.innerHTML =
+              '<div class="exhibit-thanks"><strong>Thank you.</strong><br>Your contribution has been sent to our team for review. It means a great deal.</div>';
+          } catch (err) {
+            msg.hidden = false;
+            msg.className = 'exhibit-form-msg exhibit-form-msg--err';
+            msg.textContent = (err as Error).message;
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

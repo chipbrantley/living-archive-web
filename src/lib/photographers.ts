@@ -95,6 +95,25 @@ const PHOTOGRAPHERS: Record<string, Photographer> = {
     rightsHolderUrl: 'https://www.jimmarshallphotographyllc.com/',
     rightsHolderEmail: 'licensing@jimmarshallphotographyllc.com',
   },
+  // Added for the Proof Positive exhibit. Credit lines are sensible defaults —
+  // confirm the exact wording with the rights holders (Stanford, ADAH), the way
+  // the Herron M2866 citation was confirmed with Ben. Collection/finding-aid
+  // details (for photographer-page reproductions) are a later, non-blocking add.
+  BF: {
+    fullName: 'Bob Fitch',
+    credit: 'Bob Fitch / Stanford University Libraries',
+    rightsHolder: 'Stanford University Libraries',
+  },
+  TW: {
+    fullName: 'Tamio Wakayama',
+    credit: 'Tamio Wakayama / Stanford University Libraries',
+    rightsHolder: 'the Estate of Tamio Wakayama (Mayu Takasaki)',
+  },
+  JP: {
+    fullName: 'Jim Peppler',
+    credit: 'Jim Peppler / Alabama Dept. of Archives & History',
+    rightsHolder: 'the Alabama Department of Archives and History',
+  },
 };
 
 /** Full display name for a photographer prefix; falls back to the raw prefix. */
