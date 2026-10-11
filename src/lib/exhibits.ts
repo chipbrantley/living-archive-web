@@ -37,7 +37,7 @@ const PROOF_POSITIVE: Exhibit = {
   itemCount: 51,
   blurb: `Proof Positive is the first Living Archive exhibit in Mississippi, featuring Bob Fitch, Matt Herron, Jim Marshall, Jim Peppler, and Tamio Wakayama. Most of these images have never been printed or publicly seen.
 
-Blown up from the photographers' own contact sheets, the images in this show turn the act of looking into an act of remembering. If you recognize someone, tell us. Every name, place, or story you add helps return these photographs to the people and communities who lived this history.`,
+Click on an image below. If you recognize someone, please let us know using the short form. Every name, place, or story you add helps return these photographs to the people and communities who lived this history.`,
 };
 
 const EXHIBITS: Record<string, Exhibit> = {
