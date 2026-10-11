@@ -236,7 +236,7 @@ const exhibit = exhibitForImage(image?.proofPositiveNumber ?? null);
 
           {exhibit && image.proofPositiveNumber && (
             <div class="exhibited-line">
-              <a href={`/jackson26/${image.proofPositiveNumber}`}>
+              <a href={`/${exhibit.slug}`}>
                 Exhibited in {exhibit.name} ({exhibit.city.split(',')[0]}, 2026) →
               </a>
               {showExhibitNumber(exhibit) && <span class="exhibited-no"> · No. {image.proofPositiveNumber}</span>}
