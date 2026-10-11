@@ -32,6 +32,7 @@ const paragraphs = PROOF_POSITIVE.blurb.split(/\n{2,}/).filter(Boolean);
     <main class="exhibit-main">
       <section class="exhibit-intro">
         <h1 class="exhibit-title">Proof Positive</h1>
+        <p class="exhibit-tagline">{PROOF_POSITIVE.tagline}</p>
         <div class="exhibit-dates">Smith Robertson Museum · Jackson, Mississippi · October 26 – December 31, 2026</div>
         {paragraphs.map((p) => <p class="exhibit-blurb">{p}</p>)}
       </section>

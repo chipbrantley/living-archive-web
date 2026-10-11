@@ -14,6 +14,8 @@ export interface Exhibit {
   venue: string;
   /** "City, State" for display. */
   city: string;
+  /** Poster-style descriptive subtitle, shown under the title on the landing. */
+  tagline: string;
   /** Run dates (ISO, inclusive). The wayfinding item number auto-hides after end. */
   start: string;
   end: string;
@@ -28,10 +30,12 @@ const PROOF_POSITIVE: Exhibit = {
   name: 'Proof Positive',
   venue: 'Smith Robertson Museum',
   city: 'Jackson, Mississippi',
+  tagline:
+    'Work by five photographers who documented the Civil Rights Movement in Mississippi between 1963 and 1966',
   start: '2026-10-26',
   end: '2026-12-31',
   itemCount: 51,
-  blurb: `Proof Positive is the first Living Archive exhibit in Mississippi. It features work from 1963–1966 by five photographers: Bob Fitch, Matt Herron, Jim Marshall, Jim Peppler, and Tamio Wakayama. Most of these images have never been printed or publicly seen.
+  blurb: `Proof Positive is the first Living Archive exhibit in Mississippi, featuring Bob Fitch, Matt Herron, Jim Marshall, Jim Peppler, and Tamio Wakayama. Most of these images have never been printed or publicly seen.
 
 Blown up from the photographers' own contact sheets, the images in this show turn the act of looking into an act of remembering. If you recognize someone, tell us. Every name, place, or story you add helps return these photographs to the people and communities who lived this history.`,
 };

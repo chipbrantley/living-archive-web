@@ -1355,6 +1355,14 @@ textarea.exhibit-input { resize: vertical; line-height: 1.5; }
   margin: 0 0 6px;
   color: var(--ink);
 }
+.exhibit-tagline {
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+  max-width: 46ch;
+}
 .exhibit-dates { font-size: 13px; color: var(--ink-faint); margin-bottom: 18px; }
 .exhibit-blurb { font-size: 16px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 14px; }
 .exhibit-grid-title { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-soft); margin: 8px 0 14px; }
