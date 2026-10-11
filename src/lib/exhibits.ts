@@ -31,11 +31,9 @@ const PROOF_POSITIVE: Exhibit = {
   start: '2026-10-26',
   end: '2026-12-31',
   itemCount: 51,
-  blurb: `Proof Positive is the first Living Archive exhibition in Mississippi. It features work from 1963–1966 by five photographers: Matt Herron, Jim Marshall, Jim Peppler, Tamio Wakayama, and Bob Fitch. Many have never been printed or publicly seen.
+  blurb: `Proof Positive is the first Living Archive exhibit in Mississippi. It features work from 1963–1966 by five photographers: Bob Fitch, Matt Herron, Jim Marshall, Jim Peppler, and Tamio Wakayama. Most of these images have never been printed or publicly seen.
 
-Blown up from the photographers' own contact sheets, the show turns the act of looking into an act of remembering.
-
-If you recognize someone, tell us. Every name, place, or story you add helps return these photographs to the people and communities who lived this history.`,
+Blown up from the photographers' own contact sheets, the images in this show turn the act of looking into an act of remembering. If you recognize someone, tell us. Every name, place, or story you add helps return these photographs to the people and communities who lived this history.`,
 };
 
 const EXHIBITS: Record<string, Exhibit> = {
